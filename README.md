@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Command Center
 
-## Getting Started
+One calm place to run every business: plan your day, track launches, see revenue and cash across Stripe, Shopify and Mercury, read every Gmail inbox, and ask Claude about any of it.
 
-First, run the development server:
+It runs on your own computer. Your keys stay in `.env.local` on your machine and are never committed.
+
+## Start it
+
+You need Node.js 20 or newer (`node -v` to check; get it from nodejs.org).
 
 ```bash
+npm install
+cp .env.example .env.local   # then fill in whatever keys you have
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000. Everything works right away with sample data; each area switches to your real numbers as soon as its key is added (restart `npm run dev` after editing `.env.local`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## What's inside
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Page | What it does |
+|---|---|
+| **Today** | Day-by-day planner. Drag tasks between days and from your backlog, see planned time per day, turn any email into a task for today. Unfinished tasks roll forward. |
+| **Launch board** | Backlog / To do / In progress / Done across all businesses. Filter by business or launch and see launch progress. |
+| **Metrics** | Revenue (30 days vs previous 30), MRR, cash in Mercury, orders, a daily revenue chart by business, and per-account breakdowns. |
+| **Inbox** | Every business's Gmail in one list with tabs per business. |
+| **Ask Claude** | Chat with an AI chief of staff that can read your metrics, cash, tasks and email, and create or update tasks for you. |
+| **Business pages** | Everything for one business on one page. |
+| **Connections** | Shows which accounts are live, which are sample data, and any connection errors. |
 
-## Learn More
+## Connecting your accounts
 
-To learn more about Next.js, take a look at the following resources:
+All keys go in `.env.local`. Which account belongs to which business is set in `data/businesses.json` (add businesses there too).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Claude**: `ANTHROPIC_API_KEY` from platform.claude.com.
+- **Mercury**: `MERCURY_API_TOKEN` (Mercury › Settings › API tokens, read only). Then put each account's id in that business's `mercuryAccountIds` so cash shows per business; the Connections page and Metrics page list your accounts.
+- **Stripe** (one per account): `STRIPE_<KEY>_SECRET_KEY`, where `<KEY>` matches the `stripe` list in `businesses.json`. Use a restricted key with read access to Charges, Subscriptions and Balance.
+- **Shopify** (one per store): in Shopify admin › Settings › Apps › Develop apps, create a custom app with the `read_orders` scope, then set `SHOPIFY_<KEY>_STORE=yourstore.myshopify.com` and `SHOPIFY_<KEY>_TOKEN`.
+- **Gmail** (one per inbox):
+  1. In Google Cloud Console create a project, enable the Gmail API, and create an OAuth client of type **Desktop app**. Put its id and secret in `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`.
+  2. Run `npm run gmail:auth -- ASKAWAY` (repeat per inbox with its key). It opens Google sign-in and saves the refresh token to `.env.local`. Access is read only.
+  3. If several businesses share one Gmail account, give each the same `account` and a `query` filter in `businesses.json`, e.g. `"query": "to:hello@askaway.com"`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Where things live
 
-## Deploy on Vercel
+- Tasks are saved in `data/db.json` (created on first run with example tasks; delete it to start fresh).
+- Integrations: `src/lib/integrations/` (stripe, shopify, mercury, gmail). Each falls back to sample data if its key is missing or the call fails.
+- The AI agent and its tools: `src/lib/agent.ts`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Next steps
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Wrap as a Mac/Windows desktop app (Tauri or Electron).
+- Reply to email and archive from inside the app.
+- More launch tooling: milestones, dependencies, recurring tasks.

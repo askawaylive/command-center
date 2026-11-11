@@ -1,0 +1,73 @@
+"use client";
+import { useState } from "react";
+import type { Business, Email } from "@/lib/types";
+import { Icon } from "./Icon";
+
+export function InboxView({ emails, businesses, fixedBusiness }: { emails: Email[]; businesses: Business[]; fixedBusiness?: string }) {
+  const [biz, setBiz] = useState(fixedBusiness ?? "all");
+  const [planned, setPlanned] = useState<Set<string>>(new Set());
+  const byId = Object.fromEntries(businesses.map((b) => [b.id, b]));
+  const list = emails.filter((e) => biz === "all" || e.businessId === biz);
+  const unread = (id?: string) => emails.filter((e) => e.unread && (!id || e.businessId === id)).length;
+
+  const plan = async (e: Email) => {
+    await fetch("/api/tasks", {
+      method: "POST",
+      body: JSON.stringify({ title: `Follow up: ${e.subject}`, businessId: e.businessId, plannedFor: new Date().toLocaleDateString("en-CA"), estimateMin: 15, notes: `From ${e.from}` }),
+    });
+    setPlanned((s) => new Set(s).add(e.id));
+  };
+
+  return (
+    <div className="px-8 pb-10">
+      {!fixedBusiness && (
+        <div className="mb-5 flex flex-wrap gap-1 border-b border-line">
+          {[{ id: "all", name: "All inboxes", color: "" }, ...businesses].map((b) => (
+            <button
+              key={b.id}
+              onClick={() => setBiz(b.id)}
+              className={`-mb-px border-b-2 px-3 py-2 text-[14px] ${biz === b.id ? "border-accent text-ink" : "border-transparent text-muted hover:text-ink"}`}
+            >
+              {b.color && <span className="mr-1.5 inline-block h-2 w-2 rounded-full" style={{ background: b.color }} />}
+              {b.name}
+              {unread(b.id === "all" ? undefined : b.id) > 0 && <span className="ml-1.5 text-[12px] text-accent">{unread(b.id === "all" ? undefined : b.id)}</span>}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="card divide-y divide-[var(--border)] overflow-hidden">
+        {list.length === 0 && <div className="p-6 text-muted">Inbox zero. Nice.</div>}
+        {list.map((e) => (
+          <div key={e.id} className="group flex items-start gap-3 px-5 py-3.5 hover:bg-bg">
+            <span className="mt-2 h-2 w-2 shrink-0 rounded-full" style={{ background: e.unread ? "var(--accent)" : "transparent" }} />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 text-[13px]">
+                <span className={e.unread ? "font-semibold" : "text-muted"}>{e.from}</span>
+                <span className="inline-flex items-center gap-1 rounded-md bg-sidebar px-1.5 py-0.5 text-[11px] text-muted">
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: byId[e.businessId]?.color }} />
+                  {byId[e.businessId]?.name}
+                </span>
+                {!e.live && <span className="text-[11px] text-faint">sample</span>}
+                <span className="ml-auto shrink-0 text-[12px] text-faint">
+                  {new Date(e.date).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                </span>
+              </div>
+              <div className={`mt-0.5 text-[14px] ${e.unread ? "font-medium" : ""}`}>{e.subject}</div>
+              <div className="truncate text-[13px] text-muted">{e.snippet}</div>
+            </div>
+            <div className="flex shrink-0 flex-col items-end gap-1 opacity-0 group-hover:opacity-100">
+              {e.live && (
+                <a className="text-[12px] text-muted hover:text-accent" href={`https://mail.google.com/mail/u/0/#all/${e.id}`} target="_blank" rel="noreferrer">
+                  Open in Gmail
+                </a>
+              )}
+              <button onClick={() => plan(e)} disabled={planned.has(e.id)} className="inline-flex items-center gap-1 text-[12px] text-accent">
+                <Icon name={planned.has(e.id) ? "check" : "plus"} size={12} /> {planned.has(e.id) ? "Planned" : "Plan for today"}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

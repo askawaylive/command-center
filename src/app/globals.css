@@ -1,26 +1,93 @@
 @import "tailwindcss";
 
+/* Warm, calm palette: cream paper, ink text, terracotta accent. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --bg: #faf9f5;
+  --surface: #ffffff;
+  --sidebar: #f0eee6;
+  --border: #e6e2d8;
+  --ink: #1f1e1d;
+  --muted: #6f6c64;
+  --faint: #a19e95;
+  --accent: #c96442;
+  --accent-hover: #b4573a;
+  --accent-soft: #f6e7df;
+  --good: #4f7a4a;
+  --bad: #b04a3c;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #262624;
+    --surface: #30302e;
+    --sidebar: #1f1e1d;
+    --border: #3e3d3a;
+    --ink: #f3f1ea;
+    --muted: #b1ada3;
+    --faint: #7d7a72;
+    --accent: #d97757;
+    --accent-hover: #e38a6c;
+    --accent-soft: #3d2c25;
+    --good: #8cbf85;
+    --bad: #e08877;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-sidebar: var(--sidebar);
+  --color-line: var(--border);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-good: var(--good);
+  --color-bad: var(--bad);
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-serif), ui-serif, Georgia, serif;
 }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 10px;
+  padding: 7px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-ghost { color: var(--muted); }
+.btn-ghost:hover { background: var(--sidebar); color: var(--ink); }
+
+.input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 14px;
+  outline: none;
+  width: 100%;
+}
+.input:focus { border-color: var(--accent); }
+
+.scroll-thin::-webkit-scrollbar { height: 8px; width: 8px; }
+.scroll-thin::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }

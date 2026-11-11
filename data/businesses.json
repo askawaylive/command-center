@@ -1,0 +1,65 @@
+[
+  {
+    "id": "askaway",
+    "name": "Askaway",
+    "tagline": "Live Q&A platform",
+    "color": "#eb6834",
+    "sources": {
+      "stripe": [
+        "ASKAWAY"
+      ],
+      "mercuryAccountIds": [],
+      "gmail": {
+        "account": "ASKAWAY"
+      }
+    }
+  },
+  {
+    "id": "sitcom",
+    "name": "Sitcom",
+    "tagline": "Show & studio",
+    "color": "#2a78d6",
+    "sources": {
+      "stripe": [
+        "SITCOM"
+      ],
+      "mercuryAccountIds": [],
+      "gmail": {
+        "account": "SITCOM"
+      }
+    }
+  },
+  {
+    "id": "homelove",
+    "name": "Home Love",
+    "tagline": "Home goods store",
+    "color": "#1baf7a",
+    "sources": {
+      "shopify": [
+        "HOMELOVE"
+      ],
+      "mercuryAccountIds": [],
+      "gmail": {
+        "account": "HOMELOVE"
+      }
+    }
+  },
+  {
+    "id": "littletan",
+    "name": "Little Tan",
+    "tagline": "Tanning products",
+    "color": "#eda100",
+    "sources": {
+      "shopify": [
+        "LITTLETAN"
+      ],
+      "stripe": [
+        "LITTLETAN"
+      ],
+      "mercuryAccountIds": [],
+      "gmail": {
+        "account": "LITTLETAN"
+      }
+    }
+  }
+]
