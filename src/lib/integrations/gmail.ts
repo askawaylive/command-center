@@ -1,7 +1,9 @@
 import type { Business, Email } from "../types";
+import { getKV } from "../store";
 
-export function gmailRefreshToken(account: string) {
-  return process.env[`GMAIL_${account}_REFRESH_TOKEN`] || undefined;
+/** Refresh token from .env (local script) or from the in-app "Connect Gmail" flow (stored in the database). */
+export async function gmailRefreshToken(account: string): Promise<string | undefined> {
+  return process.env[`GMAIL_${account}_REFRESH_TOKEN`] || (await getKV<string>(`gmail:${account}`)) || undefined;
 }
 
 async function accessToken(refreshToken: string) {
@@ -30,7 +32,7 @@ interface GmailMessage {
 /** Latest inbox messages for a business's Gmail account. */
 export async function fetchGmail(b: Business, max = 15): Promise<Email[]> {
   const cfg = b.sources.gmail;
-  const refresh = cfg && gmailRefreshToken(cfg.account);
+  const refresh = cfg && (await gmailRefreshToken(cfg.account));
   if (!cfg || !refresh) throw new Error(`No Gmail token for ${b.name}`);
   const token = await accessToken(refresh);
   const auth = { Authorization: `Bearer ${token}` };

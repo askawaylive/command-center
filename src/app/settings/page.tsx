@@ -9,12 +9,12 @@ const HOW: Record<string, string> = {
   mercury: "MERCURY_API_TOKEN from Mercury › Settings › API tokens (read only)",
   stripe: "STRIPE_<KEY>_SECRET_KEY, a restricted read-only key per Stripe account",
   shopify: "SHOPIFY_<KEY>_STORE and SHOPIFY_<KEY>_TOKEN from a custom app with read_orders",
-  gmail: "GMAIL_<KEY>_REFRESH_TOKEN via npm run gmail:auth -- <KEY>",
+  gmail: "Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, then use Connect Gmail",
 };
 
 export default async function SettingsPage() {
   await Promise.all([getAllMetrics(), getEmails()]); // populate any connection errors
-  const status = getSourceStatus();
+  const status = await getSourceStatus();
   const businesses = getBusinesses();
   return (
     <div className="pb-10">
@@ -31,6 +31,11 @@ export default async function SettingsPage() {
                 </div>
                 <div className="text-[12px] text-muted">{s.error ? `Error: ${s.error.slice(0, 200)}` : s.connected ? "Connected" : HOW[s.kind]}</div>
               </div>
+              {s.kind === "gmail" && process.env.GOOGLE_CLIENT_ID && (
+                <a href={`/api/gmail/connect?account=${s.name.split(" · ")[1]}`} className="btn btn-ghost border border-line shrink-0">
+                  {s.connected ? "Reconnect" : "Connect Gmail"}
+                </a>
+              )}
             </div>
           ))}
         </div>

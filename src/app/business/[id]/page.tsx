@@ -45,7 +45,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
         </section>
       </div>
       <h2 className="px-8 pt-8 pb-4 font-serif text-[24px]">Tasks</h2>
-      <Board initialTasks={listTasks({ businessId: id })} businesses={getBusinesses()} fixedBusiness={id} />
+      <Board initialTasks={await listTasks({ businessId: id })} businesses={getBusinesses()} fixedBusiness={id} />
       <h2 className="px-8 pt-4 pb-4 font-serif text-[24px]">Inbox</h2>
       <InboxView emails={emails} businesses={getBusinesses()} fixedBusiness={id} />
     </div>

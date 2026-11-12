@@ -125,7 +125,7 @@ export async function getEmails(businessId?: string): Promise<Email[]> {
     businesses.map(async (b) => {
       const acct = b.sources.gmail?.account;
       const key = `gmail:${acct}`;
-      if (acct && gmailRefreshToken(acct)) {
+      if (acct && (await gmailRefreshToken(acct))) {
         try {
           const r = await cached(key, () => fetchGmail(b), 60_000);
           errors.delete(key);
@@ -140,7 +140,7 @@ export async function getEmails(businessId?: string): Promise<Email[]> {
   return lists.flat().sort((a, b) => b.date.localeCompare(a.date));
 }
 
-export function getSourceStatus(): SourceStatus[] {
+export async function getSourceStatus(): Promise<SourceStatus[]> {
   const out: SourceStatus[] = [
     { name: "Claude (AI agent)", kind: "claude", connected: Boolean(process.env.ANTHROPIC_API_KEY) },
     { name: "Mercury", kind: "mercury", connected: Boolean(process.env.MERCURY_API_TOKEN), error: errors.get("mercury") },
@@ -151,7 +151,7 @@ export function getSourceStatus(): SourceStatus[] {
     for (const a of b.sources.shopify ?? [])
       out.push({ name: `Shopify · ${a}`, kind: "shopify", businessId: b.id, connected: Boolean(shopifyCreds(a)), error: errors.get(`shopify:${a}`) });
     const g = b.sources.gmail?.account;
-    if (g) out.push({ name: `Gmail · ${g}`, kind: "gmail", businessId: b.id, connected: Boolean(gmailRefreshToken(g)), error: errors.get(`gmail:${g}`) });
+    if (g) out.push({ name: `Gmail · ${g}`, kind: "gmail", businessId: b.id, connected: Boolean(await gmailRefreshToken(g)), error: errors.get(`gmail:${g}`) });
   }
   return out;
 }

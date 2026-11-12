@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={`${sans.variable} ${serif.variable}`}>
         <div className="flex h-screen overflow-hidden">
-          <Sidebar businesses={businesses} />
+          <Sidebar businesses={businesses} signOut={Boolean(process.env.APP_PASSWORD)} />
           <main className="flex-1 overflow-y-auto scroll-thin">{children}</main>
         </div>
       </body>

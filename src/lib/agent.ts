@@ -65,7 +65,7 @@ function buildTools(onChange: () => void) {
       }),
       run: async ({ business_id, status, planned_for }) =>
         JSON.stringify(
-          listTasks({ businessId: business_id }).filter(
+          (await listTasks({ businessId: business_id })).filter(
             (t) => (!status || t.status === status) && (!planned_for || t.plannedFor === planned_for),
           ),
         ),
@@ -87,7 +87,7 @@ function buildTools(onChange: () => void) {
         if (!businessIds().includes(i.business_id)) return `Unknown business ${i.business_id}`;
         onChange();
         return JSON.stringify(
-          createTask({
+          await createTask({
             title: i.title,
             businessId: i.business_id,
             plannedFor: i.planned_for,
@@ -110,7 +110,7 @@ function buildTools(onChange: () => void) {
         priority: z.enum(["low", "medium", "high"]).optional(),
       }),
       run: async ({ id, status, planned_for, priority }) => {
-        const t = updateTask(id, {
+        const t = await updateTask(id, {
           ...(status && { status }),
           ...(planned_for && { plannedFor: planned_for }),
           ...(priority && { priority }),

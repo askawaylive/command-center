@@ -1,17 +1,12 @@
 import "server-only";
-import fs from "node:fs";
-import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type { Task } from "./types";
 import { isoDay, addDays } from "./dates";
+import { deleteDoc, listDocs, putDocs } from "./store";
 
-const FILE = path.join(process.cwd(), "data", "db.json");
+const COLL = "tasks";
 
-interface Db {
-  tasks: Task[];
-}
-
-function seed(): Db {
+function seed(): { tasks: Task[] } {
   const t = isoDay();
   const mk = (p: Partial<Task> & Pick<Task, "title" | "businessId">): Task => ({
     id: randomUUID(),
@@ -40,24 +35,20 @@ function seed(): Db {
   };
 }
 
-function read(): Db {
-  if (!fs.existsSync(FILE)) write(seed());
-  return JSON.parse(fs.readFileSync(FILE, "utf8")) as Db;
+async function all(): Promise<Task[]> {
+  const existing = await listDocs<Task>(COLL);
+  if (existing) return existing.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const { tasks } = seed();
+  await putDocs(COLL, tasks);
+  return tasks;
 }
 
-function write(db: Db) {
-  fs.mkdirSync(path.dirname(FILE), { recursive: true });
-  const tmp = FILE + ".tmp";
-  fs.writeFileSync(tmp, JSON.stringify(db, null, 2));
-  fs.renameSync(tmp, FILE);
+export async function listTasks(filter: { businessId?: string } = {}): Promise<Task[]> {
+  return (await all()).filter((t) => !filter.businessId || t.businessId === filter.businessId);
 }
 
-export function listTasks(filter: { businessId?: string } = {}): Task[] {
-  return read().tasks.filter((t) => !filter.businessId || t.businessId === filter.businessId);
-}
-
-export function createTask(input: Partial<Task> & Pick<Task, "title" | "businessId">): Task {
-  const db = read();
+export async function createTask(input: Partial<Task> & Pick<Task, "title" | "businessId">): Promise<Task> {
+  await all();
   const task: Task = {
     id: randomUUID(),
     status: "todo",
@@ -65,24 +56,20 @@ export function createTask(input: Partial<Task> & Pick<Task, "title" | "business
     createdAt: new Date().toISOString(),
     ...input,
   };
-  db.tasks.push(task);
-  write(db);
+  await putDocs(COLL, [task]);
   return task;
 }
 
-export function updateTask(id: string, patch: Partial<Task>): Task | undefined {
-  const db = read();
-  const t = db.tasks.find((x) => x.id === id);
+export async function updateTask(id: string, patch: Partial<Task>): Promise<Task | undefined> {
+  const t = (await all()).find((x) => x.id === id);
   if (!t) return undefined;
   Object.assign(t, patch, { id });
   if (patch.status === "done" && !t.completedAt) t.completedAt = new Date().toISOString();
   if (patch.status && patch.status !== "done") delete t.completedAt;
-  write(db);
+  await putDocs(COLL, [t]);
   return t;
 }
 
-export function deleteTask(id: string) {
-  const db = read();
-  db.tasks = db.tasks.filter((t) => t.id !== id);
-  write(db);
+export async function deleteTask(id: string) {
+  await deleteDoc(COLL, id);
 }

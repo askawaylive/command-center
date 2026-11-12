@@ -12,7 +12,7 @@ const NAV = [
   { href: "/agent", label: "Ask Claude", icon: "spark" },
 ];
 
-export function Sidebar({ businesses }: { businesses: Business[] }) {
+export function Sidebar({ businesses, signOut }: { businesses: Business[]; signOut?: boolean }) {
   const path = usePathname();
   const item = (active: boolean) =>
     `flex items-center gap-2.5 rounded-lg px-3 py-2 text-[14px] transition-colors ${
@@ -43,6 +43,17 @@ export function Sidebar({ businesses }: { businesses: Business[] }) {
         <Link href="/settings" className={item(path === "/settings")}>
           <Icon name="gear" /> Connections
         </Link>
+        {signOut && (
+          <button
+            onClick={async () => {
+              await fetch("/api/logout", { method: "POST" });
+              window.location.href = "/login";
+            }}
+            className="mt-1 w-full px-3 py-1.5 text-left text-[12px] text-faint hover:text-ink"
+          >
+            Sign out
+          </button>
+        )}
       </div>
     </aside>
   );

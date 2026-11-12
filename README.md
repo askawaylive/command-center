@@ -4,7 +4,13 @@ One calm place to run every business: plan your day, track launches, see revenue
 
 It runs on your own computer. Your keys stay in `.env.local` on your machine and are never committed.
 
-## Start it
+## Hosted on Render
+
+`render.yaml` defines a web service plus a Postgres database. When `APP_PASSWORD` is set, the app asks for that password before showing anything. When `DATABASE_URL` is set, tasks and Gmail connections are saved in Postgres; without it they go to `data/db.json`.
+
+Set keys in the Render dashboard under the service's **Environment** tab, not in files. For Gmail, add `https://<your-app>.onrender.com/api/gmail/callback` as an authorized redirect URI on your Google OAuth client (type **Web application**), then press **Connect Gmail** for each inbox on the Connections page.
+
+## Run it on your own computer instead
 
 You need Node.js 20 or newer (`node -v` to check; get it from nodejs.org).
 
