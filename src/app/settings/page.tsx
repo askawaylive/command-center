@@ -29,7 +29,7 @@ export default async function SettingsPage() {
                   {s.name}
                   {s.businessId && <span className="text-muted"> · {businesses.find((b) => b.id === s.businessId)?.name}</span>}
                 </div>
-                <div className="text-[12px] text-muted">{s.error ? `Error: ${s.error.slice(0, 200)}` : s.connected ? "Connected" : HOW[s.kind]}</div>
+                <div className="text-[12px] text-muted">{s.error ? `Error: ${s.error.slice(0, 200)}` : s.connected ? (s.kind === "gmail" && !s.canSend ? "Connected, read only. Reconnect to reply from the app." : "Connected") : HOW[s.kind]}</div>
               </div>
               {s.kind === "gmail" && process.env.GOOGLE_CLIENT_ID && (
                 <a href={`/api/gmail/connect?account=${s.name.split(" · ")[1]}`} className="btn btn-ghost border border-line shrink-0">

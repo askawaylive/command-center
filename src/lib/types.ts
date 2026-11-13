@@ -81,6 +81,9 @@ export interface Email {
   date: string;
   unread: boolean;
   live: boolean;
+  threadId?: string;
+  /** True when this inbox was connected with permission to send, so replies work. */
+  canReply?: boolean;
 }
 
 export interface BankAccount {

@@ -5,7 +5,7 @@ import { cached } from "./cache";
 import { fetchStripe, stripeKey } from "./integrations/stripe";
 import { fetchShopify, shopifyCreds } from "./integrations/shopify";
 import { fetchMercuryAccounts } from "./integrations/mercury";
-import { fetchGmail, gmailRefreshToken } from "./integrations/gmail";
+import { fetchGmail, gmailCanSend, gmailRefreshToken } from "./integrations/gmail";
 import { lastNDays } from "./dates";
 
 export interface SourceStatus {
@@ -14,6 +14,8 @@ export interface SourceStatus {
   businessId?: string;
   connected: boolean;
   error?: string;
+  /** Gmail only: connected with permission to send replies. */
+  canSend?: boolean;
 }
 
 const errors = new Map<string, string>();
@@ -136,7 +138,7 @@ export async function getSourceStatus(): Promise<SourceStatus[]> {
     for (const a of b.sources.shopify ?? [])
       out.push({ name: `Shopify · ${a}`, kind: "shopify", businessId: b.id, connected: Boolean(shopifyCreds(a)), error: errors.get(`shopify:${a}`) });
     const g = b.sources.gmail?.account;
-    if (g) out.push({ name: `Gmail · ${g}`, kind: "gmail", businessId: b.id, connected: Boolean(await gmailRefreshToken(g)), error: errors.get(`gmail:${g}`) });
+    if (g) out.push({ name: `Gmail · ${g}`, kind: "gmail", businessId: b.id, connected: Boolean(await gmailRefreshToken(g)), canSend: await gmailCanSend(g), error: errors.get(`gmail:${g}`) });
   }
   return out;
 }

@@ -16,7 +16,7 @@ export async function GET(req: Request) {
       client_id: process.env.GOOGLE_CLIENT_ID,
       redirect_uri: `${publicOrigin(req)}/api/gmail/callback`,
       response_type: "code",
-      scope: "https://www.googleapis.com/auth/gmail.readonly",
+      scope: "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send",
       access_type: "offline",
       prompt: "consent select_account",
       state: `${account}.${nonce}`,

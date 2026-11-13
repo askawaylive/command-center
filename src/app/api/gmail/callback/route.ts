@@ -22,9 +22,10 @@ export async function GET(req: Request) {
       grant_type: "authorization_code",
     }),
   });
-  const json = (await r.json()) as { refresh_token?: string };
+  const json = (await r.json()) as { refresh_token?: string; scope?: string };
   if (!json.refresh_token) return NextResponse.redirect(`${origin}/settings?gmail=error`);
   await setKV(`gmail:${account}`, json.refresh_token);
+  await setKV(`gmailscope:${account}`, json.scope ?? "");
   clearCache();
   const res = NextResponse.redirect(`${origin}/settings?gmail=connected`);
   res.cookies.delete("gmail_oauth");
