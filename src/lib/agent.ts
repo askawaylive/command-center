@@ -14,9 +14,9 @@ export interface ChatTurn {
   content: string;
 }
 
-const businessIds = () => getBusinesses().map((b) => b.id);
 
-function buildTools(onChange: () => void) {
+function buildTools(ids: string[], onChange: () => void) {
+  const businessIds = () => ids;
   return [
     betaZodTool({
       name: "get_business_overview",
@@ -24,7 +24,7 @@ function buildTools(onChange: () => void) {
         "Summary of every business: revenue last 30 days vs previous 30, orders, MRR, cash in Mercury, and whether figures are live or sample data. Start here for cross-business questions.",
       inputSchema: z.object({}),
       run: async () => {
-        const [metrics, businesses] = [await getAllMetrics(), getBusinesses()];
+        const [metrics, businesses] = await Promise.all([getAllMetrics(), getBusinesses()]);
         return JSON.stringify(
           metrics.map((m) => ({
             business: businesses.find((b) => b.id === m.businessId)?.name,
@@ -138,9 +138,10 @@ When you create or change tasks, say exactly what you did.`;
 export async function runAgent(history: ChatTurn[]) {
   const client = new Anthropic();
   let changed = false;
-  const businesses = getBusinesses()
-    .map((b) => `${b.id} = ${b.name} (${b.tagline})`)
-    .join("; ");
+  const list = await getBusinesses();
+  const businesses = list
+    .map((b) => `- ${b.id} = ${b.name}${b.tagline ? ` (${b.tagline})` : ""}${b.description ? `: ${b.description.replace(/\s+/g, " ")}` : ""}`)
+    .join("\n");
 
   const final = await client.beta.messages.toolRunner({
     model: MODEL,
@@ -151,9 +152,9 @@ export async function runAgent(history: ChatTurn[]) {
     max_iterations: 12,
     system: [
       { type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } },
-      { type: "text", text: `Businesses: ${businesses}. Today is ${isoDay()}.` },
+      { type: "text", text: `Businesses (id = name: what it does):\n${businesses}\n\nToday is ${isoDay()}.` },
     ],
-    tools: buildTools(() => (changed = true)),
+    tools: buildTools(list.map((b) => b.id), () => (changed = true)),
     messages: history.map((t) => ({ role: t.role, content: t.content })),
   });
 

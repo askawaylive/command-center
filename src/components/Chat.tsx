@@ -40,7 +40,7 @@ function Markdown({ text }: { text: string }) {
   );
 }
 
-export function Chat() {
+export function Chat({ compact = false }: { compact?: boolean }) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -70,15 +70,15 @@ export function Chat() {
   };
 
   return (
-    <div className="mx-auto flex h-full max-w-3xl flex-col px-6">
-      <div className="flex-1 py-10">
+    <div className={compact ? "flex h-full flex-col" : "mx-auto flex h-full max-w-3xl flex-col px-6"}>
+      <div className={compact ? "flex-1 overflow-y-auto scroll-thin px-4 py-4" : "flex-1 py-10"}>
         {turns.length === 0 ? (
-          <div className="pt-[12vh] text-center">
-            <span className="inline-flex text-accent"><Icon name="spark" size={34} /></span>
-            <h1 className="mt-3 font-serif text-[34px] tracking-tight">What would you like to know?</h1>
-            <p className="mt-2 text-muted">I can see your revenue, bank balances, tasks, and inboxes across every business.</p>
-            <div className="mt-8 flex flex-wrap justify-center gap-2">
-              {SUGGESTIONS.map((s) => (
+          <div className={compact ? "pt-6 text-center" : "pt-[12vh] text-center"}>
+            <span className="inline-flex text-accent"><Icon name="spark" size={compact ? 26 : 34} /></span>
+            <h1 className={`mt-3 font-serif tracking-tight ${compact ? "text-[22px]" : "text-[34px]"}`}>What would you like to know?</h1>
+            <p className={`mt-2 text-muted ${compact ? "text-[13px]" : ""}`}>I can see your revenue, bank balances, tasks, and inboxes across every business.</p>
+            <div className={`flex flex-wrap justify-center gap-2 ${compact ? "mt-5" : "mt-8"}`}>
+              {(compact ? SUGGESTIONS.slice(0, 3) : SUGGESTIONS).map((s) => (
                 <button key={s} onClick={() => send(s)} className="rounded-full border border-line bg-surface px-3.5 py-1.5 text-[13px] text-muted hover:border-accent hover:text-ink">
                   {s}
                 </button>
@@ -86,7 +86,7 @@ export function Chat() {
             </div>
           </div>
         ) : (
-          <div className="space-y-6 text-[15px] leading-relaxed">
+          <div className={`space-y-6 leading-relaxed ${compact ? "text-[14px]" : "text-[15px]"}`}>
             {turns.map((t, i) =>
               t.role === "user" ? (
                 <div key={i} className="flex justify-end">
@@ -108,7 +108,7 @@ export function Chat() {
           </div>
         )}
       </div>
-      <div className="sticky bottom-0 bg-bg pb-6 pt-2">
+      <div className={compact ? "border-t border-line p-3" : "sticky bottom-0 bg-bg pb-6 pt-2"}>
         <div className="card flex items-end gap-2 p-2 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
           <textarea
             rows={1}

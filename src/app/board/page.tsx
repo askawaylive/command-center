@@ -9,7 +9,7 @@ export default async function BoardPage() {
   return (
     <div>
       <PageHeader title="Launch board" subtitle="Everything in flight, by stage. Drag cards between columns." />
-      <Board initialTasks={await listTasks()} businesses={getBusinesses()} />
+      <Board initialTasks={await listTasks()} businesses={await getBusinesses()} />
     </div>
   );
 }

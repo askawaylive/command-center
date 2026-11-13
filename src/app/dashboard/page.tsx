@@ -8,7 +8,7 @@ import { RefreshButton } from "@/components/RefreshButton";
 export const dynamic = "force-dynamic";
 
 export default async function Dashboard() {
-  const businesses = getBusinesses();
+  const businesses = await getBusinesses();
   const [metrics, accounts] = await Promise.all([getAllMetrics(), getBankAccounts()]);
   const sum = (f: (m: (typeof metrics)[number]) => number) => metrics.reduce((s, m) => s + f(m), 0);
   const revenue = sum((m) => m.revenue30d);

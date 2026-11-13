@@ -4,6 +4,10 @@ export interface Business {
   id: BusinessId;
   name: string;
   tagline: string;
+  /** Longer snapshot of what the business does; also given to Claude as context. */
+  description?: string;
+  /** Small square logo as a data: URL (resized in the browser before upload). */
+  logo?: string;
   color: string; // hex accent for this business
   /** Env var prefixes / identifiers used to pull live data. Secrets live in .env.local, never here. */
   sources: {

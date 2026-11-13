@@ -15,7 +15,7 @@ const HOW: Record<string, string> = {
 export default async function SettingsPage() {
   await Promise.all([getAllMetrics(), getEmails()]); // populate any connection errors
   const status = await getSourceStatus();
-  const businesses = getBusinesses();
+  const businesses = await getBusinesses();
   return (
     <div className="pb-10">
       <PageHeader title="Connections" subtitle="Add keys to .env.local and restart. Anything not connected shows sample data." />

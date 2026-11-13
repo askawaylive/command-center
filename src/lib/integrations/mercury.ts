@@ -35,7 +35,7 @@ export async function fetchMercuryAccounts(businesses: Business[]): Promise<Bank
 }
 
 export function mockBankAccounts(businesses: Business[]): BankAccount[] {
-  return businesses.map((b) => ({
+  return businesses.filter((b) => (b.sources.stripe?.length ?? 0) + (b.sources.shopify?.length ?? 0) > 0).map((b) => ({
     id: `mock-${b.id}`,
     name: `${b.name} Checking`,
     balance: mockCash(b.id),

@@ -38,7 +38,7 @@ export function ThemeToggle() {
   );
 
   return (
-    <div className="flex items-center gap-0.5 rounded-full border border-line bg-sidebar p-0.5">
+    <div className="inline-flex w-fit items-center gap-0.5 rounded-full border border-line bg-sidebar p-0.5">
       {opt("light", "sun", "Light")}
       {opt("dark", "moon", "Dark")}
     </div>

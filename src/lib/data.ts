@@ -2,7 +2,7 @@ import "server-only";
 import type { BankAccount, Business, BusinessMetrics, Email, RevenueStream, DailyPoint } from "./types";
 import { getBusinesses } from "./businesses";
 import { cached } from "./cache";
-import { mockMetrics, mockStream, mockEmails, mockDaily } from "./mock";
+import { mockStream, mockEmails, mockDaily } from "./mock";
 import { fetchStripe, stripeKey } from "./integrations/stripe";
 import { fetchShopify, shopifyCreds } from "./integrations/shopify";
 import { fetchMercuryAccounts, mockBankAccounts } from "./integrations/mercury";
@@ -28,7 +28,7 @@ function mergeDaily(series: DailyPoint[][]): DailyPoint[] {
 
 export function getBankAccounts(): Promise<BankAccount[]> {
   return cached("mercury", async () => {
-    const businesses = getBusinesses();
+    const businesses = await getBusinesses();
     try {
       errors.delete("mercury");
       return await fetchMercuryAccounts(businesses);
@@ -84,11 +84,7 @@ async function metricsFor(b: Business, accounts: BankAccount[]): Promise<Busines
     revenuePrev30d += m.revenue30d * 0.85;
   }
 
-  if (streams.length === 0) {
-    const m = mockMetrics(b);
-    series.push(m.daily);
-    revenuePrev30d = m.revenuePrev30d;
-  }
+  // No revenue sources configured: show zeros rather than made-up numbers.
 
   const daily = mergeDaily(series);
   const cash = accounts.filter((a) => a.businessId === b.id).reduce((s, a) => s + a.balance, 0);
@@ -112,7 +108,7 @@ function scaleDaily(daily: DailyPoint[], total: number): DailyPoint[] {
 
 export async function getAllMetrics(): Promise<BusinessMetrics[]> {
   const accounts = await getBankAccounts();
-  return Promise.all(getBusinesses().map((b) => metricsFor(b, accounts)));
+  return Promise.all((await getBusinesses()).map((b) => metricsFor(b, accounts)));
 }
 
 export async function getMetrics(businessId: string) {
@@ -120,7 +116,7 @@ export async function getMetrics(businessId: string) {
 }
 
 export async function getEmails(businessId?: string): Promise<Email[]> {
-  const businesses = getBusinesses().filter((b) => !businessId || b.id === businessId);
+  const businesses = (await getBusinesses()).filter((b) => !businessId || b.id === businessId);
   const lists = await Promise.all(
     businesses.map(async (b) => {
       const acct = b.sources.gmail?.account;
@@ -134,7 +130,7 @@ export async function getEmails(businessId?: string): Promise<Email[]> {
           errors.set(key, String(e));
         }
       }
-      return mockEmails(b);
+      return acct ? mockEmails(b) : [];
     }),
   );
   return lists.flat().sort((a, b) => b.date.localeCompare(a.date));
@@ -145,7 +141,7 @@ export async function getSourceStatus(): Promise<SourceStatus[]> {
     { name: "Claude (AI agent)", kind: "claude", connected: Boolean(process.env.ANTHROPIC_API_KEY) },
     { name: "Mercury", kind: "mercury", connected: Boolean(process.env.MERCURY_API_TOKEN), error: errors.get("mercury") },
   ];
-  for (const b of getBusinesses()) {
+  for (const b of await getBusinesses()) {
     for (const a of b.sources.stripe ?? [])
       out.push({ name: `Stripe · ${a}`, kind: "stripe", businessId: b.id, connected: Boolean(stripeKey(a)), error: errors.get(`stripe:${a}`) });
     for (const a of b.sources.shopify ?? [])

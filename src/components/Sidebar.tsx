@@ -3,6 +3,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Business } from "@/lib/types";
 import { Icon } from "./Icon";
+import { BizMark } from "./BizMark";
+import { ThemeToggle } from "./ThemeToggle";
 
 const NAV = [
   { href: "/", label: "Today", icon: "sun" },
@@ -31,15 +33,21 @@ export function Sidebar({ businesses, signOut }: { businesses: Business[]; signO
           </Link>
         ))}
       </nav>
-      <div className="mt-8 px-3 pb-2 text-[11px] font-medium uppercase tracking-wider text-faint">Businesses</div>
+      <div className="mt-8 flex items-center justify-between px-3 pb-2">
+        <span className="text-[11px] font-medium uppercase tracking-wider text-faint">Businesses</span>
+        <Link href="/businesses" className={`text-[11px] ${path === "/businesses" ? "text-accent" : "text-faint hover:text-accent"}`}>
+          Manage
+        </Link>
+      </div>
       <nav className="flex flex-col gap-1">
         {businesses.map((b) => (
           <Link key={b.id} href={`/business/${b.id}`} className={item(path === `/business/${b.id}`)}>
-            <span className="h-2.5 w-2.5 rounded-full" style={{ background: b.color }} /> {b.name}
+            <BizMark business={b} size={18} /> <span className="truncate">{b.name}</span>
           </Link>
         ))}
       </nav>
       <div className="mt-auto">
+        <div className="mb-3 px-3"><ThemeToggle /></div>
         <Link href="/settings" className={item(path === "/settings")}>
           <Icon name="gear" /> Connections
         </Link>

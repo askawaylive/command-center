@@ -5,7 +5,7 @@ import { getBusinesses } from "@/lib/businesses";
 
 export async function GET(req: Request) {
   const account = new URL(req.url).searchParams.get("account") ?? "";
-  if (!getBusinesses().some((b) => b.sources.gmail?.account === account)) {
+  if (!(await getBusinesses()).some((b) => b.sources.gmail?.account === account)) {
     return NextResponse.json({ error: "Unknown Gmail account key" }, { status: 400 });
   }
   if (!process.env.GOOGLE_CLIENT_ID) return NextResponse.json({ error: "GOOGLE_CLIENT_ID is not set" }, { status: 400 });

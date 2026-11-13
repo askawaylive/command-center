@@ -12,7 +12,7 @@ export default async function InboxPage() {
       <PageHeader title="Inbox" subtitle="Every business's Gmail in one place. Turn any email into a task.">
         <RefreshButton />
       </PageHeader>
-      <InboxView emails={await getEmails()} businesses={getBusinesses()} />
+      <InboxView emails={await getEmails()} businesses={await getBusinesses()} />
     </div>
   );
 }

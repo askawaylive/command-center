@@ -6,6 +6,6 @@ import { listTasks } from "@/lib/tasks";
 export const dynamic = "force-dynamic";
 
 export default async function TodayPage() {
-  const [businesses, emails] = [getBusinesses(), await getEmails()];
+  const [businesses, emails] = await Promise.all([getBusinesses(), getEmails()]);
   return <Planner initialTasks={await listTasks()} businesses={businesses} emails={emails} name={process.env.OWNER_NAME || "Scott"} />;
 }
