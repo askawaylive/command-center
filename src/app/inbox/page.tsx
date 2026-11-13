@@ -1,18 +1,17 @@
-import { InboxView } from "@/components/InboxView";
-import { PageHeader } from "@/components/ui";
-import { RefreshButton } from "@/components/RefreshButton";
+import { MailClient } from "@/components/mail/MailClient";
 import { getBusinesses } from "@/lib/businesses";
-import { getEmails } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
 export default async function InboxPage() {
   return (
-    <div>
-      <PageHeader title="Inbox" subtitle="Every business's Gmail in one place. Turn any email into a task.">
-        <RefreshButton />
-      </PageHeader>
-      <InboxView emails={await getEmails()} businesses={await getBusinesses()} />
+    <div className="flex h-full flex-col">
+      <header className="flex shrink-0 items-end justify-between gap-3 px-8 pt-6 pb-4">
+        <h1 className="font-serif text-[32px] leading-tight tracking-tight">Inbox</h1>
+      </header>
+      <div className="min-h-0 flex-1 border-t border-line">
+        <MailClient businesses={await getBusinesses()} />
+      </div>
     </div>
   );
 }

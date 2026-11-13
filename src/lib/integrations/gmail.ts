@@ -7,11 +7,12 @@ export async function gmailRefreshToken(account: string): Promise<string | undef
 }
 
 export async function gmailCanSend(account: string): Promise<boolean> {
-  return ((await getKV<string>(`gmailscope:${account}`)) ?? "").includes("gmail.send");
+  const s = (await getKV<string>(`gmailscope:${account}`)) ?? "";
+  return s.includes("gmail.send") || s.includes("gmail.modify");
 }
 
 export async function accessToken(refreshToken: string) {
-  const res = await fetch("https://oauth2.googleapis.com/token", {
+  const res = await fetch(process.env.GOOGLE_TOKEN_URL || "https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
