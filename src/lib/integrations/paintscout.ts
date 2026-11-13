@@ -8,6 +8,7 @@ import { getKV, listDocs, putDocs, setKV } from "../store";
  */
 const BASE = process.env.PAINTSCOUT_API_BASE || "https://openapi.paintscout.com/v2";
 const STALE_MS = 15 * 60_000;
+let running: Promise<unknown> | undefined;
 
 export const paintscoutKey = () => process.env.PAINTSCOUT_API_KEY || undefined;
 
@@ -105,6 +106,11 @@ export async function syncPaintscout(businessId: string, opts: { force?: boolean
   const status = await paintscoutStatus(businessId);
   if (!key) return status;
   if (!opts.force && status.lastSync && Date.now() - Date.parse(status.lastSync) < STALE_MS) return status;
+  // Already synced before: show what we have now and sync in the background, so the page doesn't wait on PaintScout.
+  if (!opts.force && status.lastSync) {
+    if (!running) running = syncPaintscout(businessId, { force: true }).finally(() => (running = undefined));
+    return status;
+  }
 
   try {
     const [quotes, invoices] = await Promise.all([fetchAll("quotes", key), fetchAll("invoices", key).catch(() => [] as PSRow[])]);

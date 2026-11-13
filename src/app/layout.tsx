@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PixelClock } from "@/components/PixelClock";
 import { QuickChat } from "@/components/QuickChat";
+import { FreshPages } from "@/components/FreshAfterEdits";
 import { getBusinesses } from "@/lib/businesses";
 
 const sans = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -31,7 +32,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <ThemeToggle />
               <PixelClock />
             </div>
-            <main className="flex-1 overflow-y-auto scroll-thin">{children}</main>
+            <main className="flex-1 overflow-y-auto scroll-thin">
+              <FreshPages>{children}</FreshPages>
+            </main>
           </div>
           <QuickChat />
         </div>

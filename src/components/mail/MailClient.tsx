@@ -47,15 +47,20 @@ const leaves = (folder: FolderId, a: ReaderAction | "read") =>
   (a === "unstar" && folder === "starred") ||
   (a === "inbox" && (folder === "spam" || folder === "trash"));
 
+// Kept for the whole browser session, so coming back to Inbox shows mail instantly while it refreshes.
+const listMemo = new Map<string, { threads: ThreadSummary[]; next: Record<string, string> | null }>();
+const threadMemo = new Map<string, Thread>();
+let countsMemo: AccountInfo[] | null = null;
+
 export function MailClient({ businesses }: { businesses: Business[] }) {
   const withGmail = businesses.filter((b) => b.sources.gmail);
-  const [accounts, setAccounts] = useState<AccountInfo[] | null>(null);
+  const [accounts, setAccounts] = useState<AccountInfo[] | null>(countsMemo);
   const [biz, setBiz] = useState<string>("all");
   const [folder, setFolder] = useState<FolderId>("inbox");
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
-  const [threads, setThreads] = useState<ThreadSummary[]>([]);
-  const [next, setNext] = useState<Record<string, string> | null>(null);
+  const [threads, setThreads] = useState<ThreadSummary[]>(() => listMemo.get("inbox|all|")?.threads ?? []);
+  const [next, setNext] = useState<Record<string, string> | null>(() => listMemo.get("inbox|all|")?.next ?? null);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState<{ businessId: string; error: string }[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -65,6 +70,7 @@ export function MailClient({ businesses }: { businesses: Business[] }) {
   const [compose, setCompose] = useState<Draft | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const reqId = useRef(0);
+  const openRef = useRef<string | null>(null);
 
   const byId = useMemo(() => Object.fromEntries(businesses.map((b) => [b.id, b])), [businesses]);
   const connected = withGmail.filter((b) => accounts?.some((a) => a.businessId === b.id));
@@ -78,12 +84,19 @@ export function MailClient({ businesses }: { businesses: Business[] }) {
 
   const loadCounts = useCallback(async () => {
     const j = (await fetch("/api/mail/counts").then((r) => r.json()).catch(() => null)) as { accounts?: AccountInfo[] } | null;
-    setAccounts(j?.accounts ?? []);
+    if (j?.accounts) countsMemo = j.accounts;
+    setAccounts(j?.accounts ?? countsMemo ?? []);
   }, []);
 
   const load = useCallback(
     async (more = false) => {
       const id = ++reqId.current;
+      const mk = `${folder}|${biz}|${search}`;
+      if (!more) {
+        const m = listMemo.get(mk);
+        setThreads(m?.threads ?? []);
+        setNext(m?.next ?? null);
+      }
       setLoading(true);
       const p = new URLSearchParams({ folder, business: biz });
       if (search) p.set("q", search);
@@ -102,9 +115,13 @@ export function MailClient({ businesses }: { businesses: Business[] }) {
       }
       setErrors(j.errors ?? []);
       setThreads((cur) => {
-        if (!more) return j.threads!;
-        const seen = new Set(cur.map(key));
-        return [...cur, ...j.threads!.filter((t) => !seen.has(key(t)))].sort((a, b) => b.date.localeCompare(a.date));
+        let out = j.threads!;
+        if (more) {
+          const seen = new Set(cur.map(key));
+          out = [...cur, ...j.threads!.filter((t) => !seen.has(key(t)))].sort((a, b) => b.date.localeCompare(a.date));
+        }
+        listMemo.set(mk, { threads: out, next: j.next ?? null });
+        return out;
       });
       setNext(j.next ?? null);
     },
@@ -117,7 +134,6 @@ export function MailClient({ businesses }: { businesses: Business[] }) {
 
   useEffect(() => {
     setSelected(new Set());
-    setNext(null);
     load(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [folder, biz, search]);
@@ -133,14 +149,16 @@ export function MailClient({ businesses }: { businesses: Business[] }) {
     }
     const k = key(t);
     setOpenKey(k);
-    setThread(null);
+    openRef.current = k;
+    setThread(threadMemo.get(k) ?? null);
     setThreadErr(null);
     setThreads((ts) => ts.map((x) => (key(x) === k ? { ...x, unread: false } : x)));
     const j = (await fetch(`/api/mail/thread?business=${t.businessId}&id=${encodeURIComponent(t.id)}`).then((r) => r.json()).catch(() => null)) as
       | (Thread & { error?: string })
       | null;
     if (!j || j.error) return setThreadErr(j?.error ?? "Couldn't open this conversation");
-    setThread(j);
+    threadMemo.set(k, j);
+    if (openRef.current === k) setThread(j);
     if (t.unread) setTimeout(loadCounts, 500);
   };
 
