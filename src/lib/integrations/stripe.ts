@@ -11,6 +11,7 @@ export interface StripeResult {
   revenuePrev30d: number;
   orders30d: number;
   mrr: number;
+  subscribers: number;
   daily: DailyPoint[];
 }
 
@@ -41,7 +42,9 @@ export async function fetchStripe(account: string): Promise<StripeResult> {
   }
 
   let mrr = 0;
+  let subscribers = 0;
   for await (const sub of stripe.subscriptions.list({ status: "active", limit: 100 })) {
+    subscribers += 1;
     for (const item of sub.items.data) {
       const price = item.price;
       const unit = (price.unit_amount ?? 0) / 100;
@@ -58,5 +61,5 @@ export async function fetchStripe(account: string): Promise<StripeResult> {
   }
 
   const daily = [...byDay.entries()].map(([date, revenue]) => ({ date, revenue }));
-  return { revenue30d, revenuePrev30d, orders30d, mrr, daily };
+  return { revenue30d, revenuePrev30d, orders30d, mrr, subscribers, daily };
 }

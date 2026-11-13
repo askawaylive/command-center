@@ -50,7 +50,7 @@ async function metricsFor(b: Business, accounts: BankAccount[]): Promise<Busines
       try {
         const r = await cached(key, () => fetchStripe(acct));
         errors.delete(key);
-        streams.push({ source: "stripe", account: acct, revenue30d: r.revenue30d, orders30d: r.orders30d, mrr: r.mrr, live: true });
+        streams.push({ source: "stripe", account: acct, revenue30d: r.revenue30d, orders30d: r.orders30d, mrr: r.mrr, subscribers: r.subscribers, live: true });
         series.push(r.daily);
         revenuePrev30d += r.revenuePrev30d;
         continue;
@@ -94,6 +94,7 @@ async function metricsFor(b: Business, accounts: BankAccount[]): Promise<Busines
     revenuePrev30d: Math.round(revenuePrev30d),
     orders30d: streams.reduce((s, x) => s + x.orders30d, 0),
     mrr: Math.round(streams.reduce((s, x) => s + (x.mrr ?? 0), 0)),
+    subscribers: streams.reduce((s, x) => s + (x.subscribers ?? 0), 0),
     cash,
     daily,
     streams,

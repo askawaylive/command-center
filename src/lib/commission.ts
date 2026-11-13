@@ -1,10 +1,28 @@
 /** Paint & Co style commission math. Pure functions, safe on server and client. */
-import type { Business, Job } from "./types";
+import type { Business, BusinessType, Job } from "./types";
 
 export const DEFAULT_COMMISSION = { rate: 13, costPct: 40 };
 
-export function isCommission(b: Pick<Business, "model" | "name">) {
-  return b.model === "commission" || (b.model === undefined && /paint\s*(&|and)?\s*co/i.test(b.name));
+export const BUSINESS_TYPES: { id: BusinessType; label: string; hint: string }[] = [
+  { id: "app", label: "Mobile App", hint: "Subscriptions through Stripe: MRR, paying subscribers, revenue per user" },
+  { id: "ecommerce", label: "E-Commerce", hint: "Store sales: revenue, orders, average order value" },
+  { id: "saas", label: "SaaS", hint: "Recurring revenue: MRR, ARR, paying customers" },
+  { id: "commission", label: "Commission", hint: "Jobs you sell: estimates, sold, completed, and when you get paid" },
+];
+
+/** The business's type; when it hasn't been picked yet, a sensible guess from its name and data sources. */
+export function businessType(b: Pick<Business, "type" | "model" | "name" | "sources">): BusinessType {
+  if (b.type) return b.type;
+  if (b.model === "commission" || /paint\s*(&|and)?\s*co/i.test(b.name)) return "commission";
+  if (/ask\s*away|sitcom/i.test(b.name)) return "app";
+  if (/little\s*tan/i.test(b.name)) return "ecommerce";
+  if (/home\s*love/i.test(b.name)) return "saas";
+  return b.sources?.shopify?.length ? "ecommerce" : "saas";
+}
+export const typeLabel = (t: BusinessType) => BUSINESS_TYPES.find((x) => x.id === t)!.label;
+
+export function isCommission(b: Pick<Business, "type" | "model" | "name" | "sources">) {
+  return businessType(b) === "commission";
 }
 export function commissionSettings(b: Pick<Business, "commission">) {
   return { ...DEFAULT_COMMISSION, ...(b.commission ?? {}) };

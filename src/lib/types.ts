@@ -1,4 +1,5 @@
 export type BusinessId = string;
+export type BusinessType = "app" | "ecommerce" | "saas" | "commission";
 
 export interface Business {
   id: BusinessId;
@@ -9,7 +10,9 @@ export interface Business {
   /** Small square logo as a data: URL (resized in the browser before upload). */
   logo?: string;
   color: string; // hex accent for this business
-  /** How the business pays Scott. "commission" swaps the revenue charts for a job/commission tracker. */
+  /** What kind of business it is; picks the dashboard on its page. */
+  type?: BusinessType;
+  /** @deprecated older setting; "commission" maps to type "commission". */
   model?: "sales" | "commission";
   commission?: { rate: number; costPct: number }; // percent of gross profit; default direct-cost % of a job
   /** Env var prefixes / identifiers used to pull live data. Secrets live in .env.local, never here. */
@@ -52,6 +55,7 @@ export interface RevenueStream {
   revenue30d: number;
   orders30d: number;
   mrr?: number;
+  subscribers?: number; // active subscriptions (Stripe)
   live: boolean;
 }
 
@@ -61,6 +65,7 @@ export interface BusinessMetrics {
   revenuePrev30d: number;
   orders30d: number;
   mrr: number;
+  subscribers: number;
   cash: number;
   daily: DailyPoint[];
   streams: RevenueStream[];

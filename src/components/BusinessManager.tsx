@@ -5,7 +5,7 @@ import type { Business } from "@/lib/types";
 import { BizMark } from "./BizMark";
 import { Icon } from "./Icon";
 import { squareImage } from "@/lib/squareImage";
-import { commissionSettings, isCommission } from "@/lib/commission";
+import { BUSINESS_TYPES, businessType, commissionSettings, isCommission, typeLabel } from "@/lib/commission";
 
 const COLORS = ["#eb6834", "#2a78d6", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"];
 
@@ -85,6 +85,7 @@ export function BusinessManager({ initial }: { initial: Business[] }) {
               {b.description || "Add a snapshot of what this business does."}
             </p>
             <div className="mt-4 flex flex-wrap gap-1.5 text-[11px] text-muted">
+              <span className="rounded-md bg-sidebar px-1.5 py-0.5 text-ink">{typeLabel(businessType(b))}</span>
               {b.sources.stripe?.length ? <span className="rounded-md border border-line px-1.5 py-0.5">Stripe</span> : null}
               {b.sources.shopify?.length ? <span className="rounded-md border border-line px-1.5 py-0.5">Shopify</span> : null}
               {b.sources.gmail ? <span className="rounded-md border border-line px-1.5 py-0.5">Gmail</span> : null}
@@ -217,21 +218,23 @@ function Editor({
         </div>
 
         <div className="mt-4">
-          <label className={label} htmlFor="biz-model">How you get paid</label>
-          <select
-            id="biz-model"
-            className="input"
-            value={isCommission(draft) ? "commission" : "sales"}
-            onChange={(e) =>
-              set({
-                model: e.target.value as "sales" | "commission",
-                commission: e.target.value === "commission" ? commissionSettings(draft) : draft.commission,
-              })
-            }
-          >
-            <option value="sales">Sales revenue (Stripe, Shopify)</option>
-            <option value="commission">Commission on jobs I sell</option>
-          </select>
+          <span className={label}>Business type</span>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {BUSINESS_TYPES.map((t) => {
+              const on = businessType(draft) === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => set({ type: t.id, model: undefined, commission: t.id === "commission" ? commissionSettings(draft) : draft.commission })}
+                  className={`rounded-xl border px-3 py-2 text-left text-[13px] transition-colors ${on ? "border-accent bg-accent-soft text-ink" : "border-line text-muted hover:text-ink"}`}
+                >
+                  <div className="font-medium">{t.label}</div>
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-1.5 text-[12px] text-faint">{BUSINESS_TYPES.find((t) => t.id === businessType(draft))?.hint}</p>
           {isCommission(draft) && (
             <div className="mt-3 grid grid-cols-2 gap-3">
               <label className="block text-[13px]">
@@ -243,7 +246,7 @@ function Editor({
                   step={0.5}
                   className="input"
                   value={commissionSettings(draft).rate}
-                  onChange={(e) => set({ model: "commission", commission: { ...commissionSettings(draft), rate: Number(e.target.value) } })}
+                  onChange={(e) => set({ type: "commission", commission: { ...commissionSettings(draft), rate: Number(e.target.value) } })}
                 />
               </label>
               <label className="block text-[13px]">
@@ -255,7 +258,7 @@ function Editor({
                   step={1}
                   className="input"
                   value={commissionSettings(draft).costPct}
-                  onChange={(e) => set({ model: "commission", commission: { ...commissionSettings(draft), costPct: Number(e.target.value) } })}
+                  onChange={(e) => set({ type: "commission", commission: { ...commissionSettings(draft), costPct: Number(e.target.value) } })}
                 />
               </label>
             </div>

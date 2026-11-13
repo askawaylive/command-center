@@ -20,7 +20,7 @@ function clean(b: Business, i: number): Business {
     description: String(b.description ?? "").trim().slice(0, 2000) || undefined,
     logo: typeof b.logo === "string" && LOGO_RE.test(b.logo) && b.logo.length < 200_000 ? b.logo : undefined,
     color: /^#[0-9a-fA-F]{6}$/.test(b.color) ? b.color : BUSINESS_COLORS[i % BUSINESS_COLORS.length],
-    model: b.model === "commission" || b.model === "sales" ? b.model : undefined,
+    type: (["app", "ecommerce", "saas", "commission"] as const).includes(b.type as never) ? b.type : undefined,
     commission:
       b.commission && Number.isFinite(b.commission.rate) && Number.isFinite(b.commission.costPct)
         ? { rate: Math.min(100, Math.max(0, b.commission.rate)), costPct: Math.min(100, Math.max(0, b.commission.costPct)) }

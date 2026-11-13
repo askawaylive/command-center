@@ -35,6 +35,7 @@ export function mockStream(b: Business, source: "stripe" | "shopify", account: s
     revenue30d,
     orders30d: Math.round(revenue30d / (source === "shopify" ? 58 : 42)),
     mrr: source === "stripe" ? Math.round(revenue30d * 0.62) : undefined,
+    subscribers: source === "stripe" ? Math.round((revenue30d * 0.62) / 11.99) : undefined,
     live: false,
   };
 }
@@ -50,6 +51,7 @@ export function mockMetrics(b: Business): Omit<BusinessMetrics, "streams" | "cas
     revenuePrev30d: prev30.reduce((s, d) => s + d.revenue, 0),
     orders30d: Math.round(revenue30d / 50),
     mrr: 0,
+    subscribers: 0,
     daily: last30,
   };
 }
