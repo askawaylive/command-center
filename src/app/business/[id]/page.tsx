@@ -8,6 +8,9 @@ import { Board } from "@/components/Board";
 import { InboxView } from "@/components/InboxView";
 import { RevenueChart } from "@/components/RevenueChart";
 import { Delta, SampleBadge, Stat, money } from "@/components/ui";
+import { CommissionTracker } from "@/components/CommissionTracker";
+import { isCommission } from "@/lib/commission";
+import { listJobs } from "@/lib/jobs";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +20,8 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
   if (!b) notFound();
   const [m, emails, all] = await Promise.all([getMetrics(id), getEmails(id), getBusinesses()]);
   if (!m) notFound();
+  const commission = isCommission(b);
+  const jobs = commission ? await listJobs(id) : [];
 
   return (
     <div className="pb-10">
@@ -26,7 +31,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-[13px] text-muted">
               {b.tagline}
-              <SampleBadge live={m.live} />
+              {!commission && <SampleBadge live={m.live} />}
             </div>
             <h1 className="font-serif text-[34px] leading-tight tracking-tight">{b.name}</h1>
           </div>
@@ -34,6 +39,11 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
         </div>
         {b.description && <p className="mt-4 max-w-3xl text-[15px] leading-relaxed text-muted whitespace-pre-line">{b.description}</p>}
       </header>
+      {commission ? (
+        <div className="px-8">
+          <CommissionTracker business={b} initial={jobs} />
+        </div>
+      ) : (
       <div className="space-y-6 px-8">
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
           <Stat label="Revenue · 30 days" value={money(m.revenue30d)} sub={<><Delta now={m.revenue30d} prev={m.revenuePrev30d} /> vs previous 30 days</>} />
@@ -53,6 +63,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
           </div>
         </section>
       </div>
+      )}
       <h2 className="px-8 pt-8 pb-4 font-serif text-[24px]">Tasks</h2>
       <Board initialTasks={await listTasks({ businessId: id })} businesses={all} fixedBusiness={id} />
       <h2 className="px-8 pt-4 pb-4 font-serif text-[24px]">Inbox</h2>

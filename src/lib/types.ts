@@ -9,6 +9,9 @@ export interface Business {
   /** Small square logo as a data: URL (resized in the browser before upload). */
   logo?: string;
   color: string; // hex accent for this business
+  /** How the business pays Scott. "commission" swaps the revenue charts for a job/commission tracker. */
+  model?: "sales" | "commission";
+  commission?: { rate: number; costPct: number }; // percent of gross profit; default direct-cost % of a job
   /** Env var prefixes / identifiers used to pull live data. Secrets live in .env.local, never here. */
   sources: {
     stripe?: string[]; // keys into STRIPE_<KEY>_SECRET_KEY
@@ -95,5 +98,27 @@ export interface Contact {
   notes?: string;
   /** Small square profile picture as a data: URL. */
   photo?: string;
+  createdAt: string;
+}
+
+export type JobStatus = "sent" | "sold" | "completed" | "lost" | "cancelled";
+
+/** A quoted job for a commission business (e.g. a painting estimate). */
+export interface Job {
+  id: string;
+  businessId: BusinessId;
+  customer: string;
+  address?: string;
+  quoteNumber?: string;
+  amount: number; // contract / proposal price
+  /** Direct costs as % of price, until the real cost is known. Falls back to the business default. */
+  costPct?: number;
+  actualCost?: number; // reconciled direct cost, once known
+  status: JobStatus;
+  sentDate: string; // YYYY-MM-DD proposal issued
+  soldDate?: string; // accepted + deposit
+  scheduledDate?: string; // expected completion
+  completedDate?: string;
+  notes?: string;
   createdAt: string;
 }

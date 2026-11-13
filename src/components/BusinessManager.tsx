@@ -5,6 +5,7 @@ import type { Business } from "@/lib/types";
 import { BizMark } from "./BizMark";
 import { Icon } from "./Icon";
 import { squareImage } from "@/lib/squareImage";
+import { commissionSettings, isCommission } from "@/lib/commission";
 
 const COLORS = ["#eb6834", "#2a78d6", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"];
 
@@ -213,6 +214,52 @@ function Editor({
             value={draft.description ?? ""}
             onChange={(e) => set({ description: e.target.value })}
           />
+        </div>
+
+        <div className="mt-4">
+          <label className={label} htmlFor="biz-model">How you get paid</label>
+          <select
+            id="biz-model"
+            className="input"
+            value={isCommission(draft) ? "commission" : "sales"}
+            onChange={(e) =>
+              set({
+                model: e.target.value as "sales" | "commission",
+                commission: e.target.value === "commission" ? commissionSettings(draft) : draft.commission,
+              })
+            }
+          >
+            <option value="sales">Sales revenue (Stripe, Shopify)</option>
+            <option value="commission">Commission on jobs I sell</option>
+          </select>
+          {isCommission(draft) && (
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <label className="block text-[13px]">
+                <span className="mb-1 block text-muted">Commission (% of gross profit)</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.5}
+                  className="input"
+                  value={commissionSettings(draft).rate}
+                  onChange={(e) => set({ model: "commission", commission: { ...commissionSettings(draft), rate: Number(e.target.value) } })}
+                />
+              </label>
+              <label className="block text-[13px]">
+                <span className="mb-1 block text-muted">Typical job cost (% of price)</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={1}
+                  className="input"
+                  value={commissionSettings(draft).costPct}
+                  onChange={(e) => set({ model: "commission", commission: { ...commissionSettings(draft), costPct: Number(e.target.value) } })}
+                />
+              </label>
+            </div>
+          )}
         </div>
 
         <button type="button" onClick={() => setShowSources(!showSources)} className="mt-5 flex items-center gap-1.5 text-[13px] font-medium text-muted hover:text-ink">
