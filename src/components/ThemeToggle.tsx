@@ -30,7 +30,7 @@ export function ThemeToggle() {
       aria-pressed={theme === t}
       title={`${label} mode`}
       className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
-        theme === t ? "bg-surface text-ink shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-faint hover:text-ink"
+        theme === t ? "bg-[#faf9f5] text-[#1f1e1d] shadow-[0_1px_3px_rgba(0,0,0,0.18)]" : "text-faint hover:text-ink"
       }`}
     >
       <Icon name={icon} size={15} />

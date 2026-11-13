@@ -82,3 +82,18 @@ export interface BankAccount {
   businessId?: BusinessId;
   live: boolean;
 }
+
+export interface Contact {
+  id: string;
+  name: string;
+  /** Which business this person is for. Empty means personal / not tied to one. */
+  businessId?: BusinessId;
+  role?: string; // e.g. "Supplier", "Investor", "Editor"
+  company?: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  /** Small square profile picture as a data: URL. */
+  photo?: string;
+  createdAt: string;
+}

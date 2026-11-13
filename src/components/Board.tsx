@@ -1,9 +1,11 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Business, Task, TaskStatus } from "@/lib/types";
 import { TaskCard } from "./TaskCard";
 import { AddTask } from "./AddTask";
 import { useTasks } from "./useTasks";
+import { BizMark } from "./BizMark";
+import { TaskDetails } from "./TaskDetails";
 
 const COLUMNS: { id: TaskStatus; label: string }[] = [
   { id: "backlog", label: "Backlog" },
@@ -17,6 +19,13 @@ export function Board({ initialTasks, businesses, fixedBusiness }: { initialTask
   const [biz, setBiz] = useState<string>(fixedBusiness ?? "all");
   const [launch, setLaunch] = useState<string>("all");
   const [over, setOver] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = tasks.find((t) => t.id === selectedId);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setSelectedId(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const byId = useMemo(() => Object.fromEntries(businesses.map((b) => [b.id, b])), [businesses]);
 
   const scoped = tasks.filter((t) => biz === "all" || t.businessId === biz);
@@ -24,17 +33,17 @@ export function Board({ initialTasks, businesses, fixedBusiness }: { initialTask
   const visible = scoped.filter((t) => launch === "all" || t.launch === launch);
 
   const chip = (active: boolean) =>
-    `rounded-full px-3 py-1 text-[13px] border transition-colors ${active ? "bg-ink text-bg border-ink" : "border-line text-muted hover:text-ink"}`;
+    `inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] border transition-colors ${active ? "bg-ink text-bg border-ink" : "border-line text-muted hover:text-ink"}`;
 
   return (
-    <div className="px-8 pb-8">
+    <div className={`px-8 pb-8 transition-[padding] ${selected ? "lg:pr-[372px]" : ""}`}>
       <div className="mb-5 flex flex-wrap items-center gap-2">
         {!fixedBusiness && (
           <>
             <button className={chip(biz === "all")} onClick={() => setBiz("all")}>All businesses</button>
             {businesses.map((b) => (
-              <button key={b.id} className={chip(biz === b.id)} onClick={() => { setBiz(b.id); setLaunch("all"); }}>
-                <span className="mr-1.5 inline-block h-2 w-2 rounded-full" style={{ background: b.color }} />
+              <button key={b.id} className={`${chip(biz === b.id)} !pl-1.5`} onClick={() => { setBiz(b.id); setLaunch("all"); }}>
+                <BizMark business={b} size={18} />
                 {b.name}
               </button>
             ))}
@@ -50,7 +59,7 @@ export function Board({ initialTasks, businesses, fixedBusiness }: { initialTask
       {launch !== "all" && (
         <LaunchProgress tasks={scoped.filter((t) => t.launch === launch)} name={launch} />
       )}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className={`grid gap-4 md:grid-cols-2 ${selected ? "xl:grid-cols-[repeat(4,minmax(250px,1fr))] xl:overflow-x-auto xl:scroll-thin xl:pb-2" : "xl:grid-cols-4"}`}>
         {COLUMNS.map((c) => {
           const list = visible.filter((t) => t.status === c.id);
           return (
@@ -77,7 +86,8 @@ export function Board({ initialTasks, businesses, fixedBusiness }: { initialTask
                     task={t}
                     business={byId[t.businessId]}
                     onToggle={() => update(t.id, { status: t.status === "done" ? "todo" : "done" })}
-                    onDelete={() => remove(t.id)}
+                    onOpen={() => setSelectedId(t.id)}
+                    selected={t.id === selectedId}
                   />
                 ))}
                 {c.id !== "done" && (
@@ -92,6 +102,20 @@ export function Board({ initialTasks, businesses, fixedBusiness }: { initialTask
           );
         })}
       </div>
+      {selected && (
+        <aside className="fixed inset-y-0 right-0 z-30 flex w-[340px] max-w-full flex-col border-l border-line bg-surface shadow-2xl">
+          <TaskDetails
+            task={selected}
+            businesses={businesses}
+            onUpdate={(patch) => update(selected.id, patch)}
+            onDelete={() => {
+              remove(selected.id);
+              setSelectedId(null);
+            }}
+            onClose={() => setSelectedId(null)}
+          />
+        </aside>
+      )}
     </div>
   );
 }

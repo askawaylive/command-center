@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Source_Serif_4 } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -8,7 +8,6 @@ import { QuickChat } from "@/components/QuickChat";
 import { getBusinesses } from "@/lib/businesses";
 
 const sans = Inter({ subsets: ["latin"], variable: "--font-sans" });
-const serif = Source_Serif_4({ subsets: ["latin"], variable: "--font-serif" });
 
 export const metadata: Metadata = {
   title: "Command Center",
@@ -23,7 +22,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* Apply the saved theme before paint so there is no flash. */}
         <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}` }} />
       </head>
-      <body className={`${sans.variable} ${serif.variable}`}>
+      <body className={sans.variable}>
         <div className="flex h-screen overflow-hidden">
           <Sidebar businesses={businesses} signOut={Boolean(process.env.APP_PASSWORD)} />
           <div className="flex min-w-0 flex-1 flex-col">

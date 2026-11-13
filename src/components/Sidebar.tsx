@@ -12,6 +12,7 @@ const NAV = [
   { href: "/board", label: "Launch board", icon: "board" },
   { href: "/dashboard", label: "Metrics", icon: "chart" },
   { href: "/inbox", label: "Inbox", icon: "mail" },
+  { href: "/contacts", label: "Contacts", icon: "users" },
   { href: "/agent", label: "Ask Claude", icon: "spark" },
 ];
 
@@ -48,24 +49,28 @@ export function Sidebar({ businesses, signOut }: { businesses: Business[]; signO
         ))}
       </nav>
       <div className="mt-auto">
-        <div className="mb-3 space-y-3 px-3">
+        <div className="mb-2 px-3">
           <PixelClock fluid />
-          <ThemeToggle />
         </div>
         <Link href="/settings" className={item(path === "/settings")}>
           <Icon name="gear" /> Connections
         </Link>
-        {signOut && (
-          <button
-            onClick={async () => {
-              await fetch("/api/logout", { method: "POST" });
-              window.location.href = "/login";
-            }}
-            className="mt-1 w-full px-3 py-1.5 text-left text-[12px] text-faint hover:text-ink"
-          >
-            Sign out
-          </button>
-        )}
+        <div className="mt-2 flex items-center justify-between pl-3">
+          {signOut ? (
+            <button
+              onClick={async () => {
+                await fetch("/api/logout", { method: "POST" });
+                window.location.href = "/login";
+              }}
+              className="py-1.5 text-[12px] text-faint hover:text-ink"
+            >
+              Sign out
+            </button>
+          ) : (
+            <span />
+          )}
+          <ThemeToggle />
+        </div>
       </div>
     </aside>
   );

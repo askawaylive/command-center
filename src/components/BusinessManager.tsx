@@ -4,31 +4,14 @@ import { useRouter } from "next/navigation";
 import type { Business } from "@/lib/types";
 import { BizMark } from "./BizMark";
 import { Icon } from "./Icon";
+import { squareImage } from "@/lib/squareImage";
 
 const COLORS = ["#eb6834", "#2a78d6", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"];
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 32);
 const key = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]+/g, "").slice(0, 32);
 
-/** Resize an uploaded image to a 128px square (center crop) so it stays small. */
-async function toLogo(file: File): Promise<string> {
-  const url = URL.createObjectURL(file);
-  try {
-    const img = new Image();
-    img.src = url;
-    await img.decode();
-    const S = 128;
-    const c = document.createElement("canvas");
-    c.width = c.height = S;
-    const ctx = c.getContext("2d")!;
-    const side = Math.min(img.naturalWidth, img.naturalHeight);
-    ctx.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, S, S);
-    const webp = c.toDataURL("image/webp", 0.9);
-    return webp.startsWith("data:image/webp") ? webp : c.toDataURL("image/png");
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
+const toLogo = (file: File) => squareImage(file, 128);
 
 type Draft = Business & { isNew?: boolean };
 
