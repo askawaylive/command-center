@@ -150,6 +150,8 @@ export function Planner({
   const [today, setToday] = useState(() => isoDay());
   const [day, setDay] = useState(today);
   const [showDone, setShowDone] = useState(false);
+  const [bizFilter, setBizFilter] = useState<string | null>(null);
+  const [dueFilter, setDueFilter] = useState<"all" | "overdue" | "today" | "week" | "has" | "none">("all");
   const byId = useMemo(() => Object.fromEntries(businesses.map((b) => [b.id, b])), [businesses]);
   const selected = tasks.find((t) => t.id === selectedId);
 
@@ -169,8 +171,32 @@ export function Planner({
   const plannedOn = (t: Task) => (t.plannedFor && t.plannedFor < today && t.status !== "done" ? today : t.plannedFor);
   const rank = (t: Task) => (t.status === "doing" ? 0 : t.priority === "high" ? 1 : 2);
   const dayTasks = tasks.filter((t) => plannedOn(t) === day);
-  const open = dayTasks.filter((t) => t.status !== "done").sort((a, b) => rank(a) - rank(b));
-  const done = dayTasks.filter((t) => t.status === "done");
+  // Filters on the Tasks card (business + due date). Stats in the header stay unfiltered.
+  const passes = (t: Task) => {
+    if (bizFilter && t.businessId !== bizFilter) return false;
+    const d = t.dueDate;
+    switch (dueFilter) {
+      case "overdue":
+        return !!d && d < today && t.status !== "done";
+      case "today":
+        return d === day;
+      case "week":
+        return !!d && d >= day && d <= addDays(day, 7);
+      case "has":
+        return !!d;
+      case "none":
+        return !d;
+      default:
+        return true;
+    }
+  };
+  const byDue = (a: Task, b: Task) => (a.dueDate ?? "9999").localeCompare(b.dueDate ?? "9999");
+  const open = dayTasks
+    .filter((t) => t.status !== "done" && passes(t))
+    .sort((a, b) => (dueFilter !== "all" ? byDue(a, b) : 0) || rank(a) - rank(b));
+  const done = dayTasks.filter((t) => t.status === "done" && passes(t));
+  const dayBiz = businesses.filter((b) => dayTasks.some((t) => t.businessId === b.id));
+  const filtering = bizFilter !== null || dueFilter !== "all";
   const planned = dayTasks.reduce((s, t) => s + (t.estimateMin ?? 0), 0);
   const left = open.reduce((s, t) => s + (t.estimateMin ?? 0), 0);
   const bizCount = new Set(dayTasks.map((t) => t.businessId)).size;
@@ -256,14 +282,54 @@ export function Planner({
               <div key={w} className="group/w card flex flex-col overflow-hidden p-4">
                 {w === "tasks" && (
                   <>
-                    <div className="mb-3 flex items-center gap-2">
+                    <div className="mb-2 flex items-center gap-2">
                       <WidgetTitle>Tasks</WidgetTitle>
                       <span className="text-[12px] text-faint tabular-nums">{open.length} open</span>
                     </div>
+                    {dayTasks.length > 0 && (
+                      <div className="mb-3 flex flex-wrap items-center gap-1.5">
+                        {dayBiz.map((b) => (
+                          <button
+                            key={b.id}
+                            onClick={() => setBizFilter(bizFilter === b.id ? null : b.id)}
+                            title={b.name}
+                            aria-pressed={bizFilter === b.id}
+                            className={`rounded-lg p-0.5 transition ${bizFilter === b.id ? "ring-2 ring-accent" : bizFilter ? "opacity-40 hover:opacity-100" : "hover:ring-2 hover:ring-line"}`}
+                          >
+                            <BizMark business={b} size={22} />
+                          </button>
+                        ))}
+                        <select
+                          value={dueFilter}
+                          onChange={(e) => setDueFilter(e.target.value as typeof dueFilter)}
+                          aria-label="Filter by due date"
+                          className={`ml-1 rounded-full border px-2.5 py-1 text-[12px] outline-none ${dueFilter !== "all" ? "border-accent bg-accent-soft text-accent" : "border-line bg-transparent text-muted"}`}
+                        >
+                          <option value="all">Any due date</option>
+                          <option value="overdue">Overdue</option>
+                          <option value="today">Due {day === today ? "today" : "this day"}</option>
+                          <option value="week">Due within 7 days</option>
+                          <option value="has">Has a due date</option>
+                          <option value="none">No due date</option>
+                        </select>
+                        {filtering && (
+                          <button
+                            onClick={() => {
+                              setBizFilter(null);
+                              setDueFilter("all");
+                            }}
+                            className="text-[12px] text-faint hover:text-accent"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                    )}
                     <div className="-mx-1 min-h-0 flex-1 overflow-y-auto scroll-thin px-1 pb-1">
                       <div className="flex flex-col gap-2">
                         {open.map(card)}
-                        <AddTask businesses={businesses} defaults={{ plannedFor: day, status: "todo" }} onCreate={create} />
+                        {filtering && open.length === 0 && <p className="px-1 py-2 text-[13px] text-faint">No tasks match these filters.</p>}
+                        <AddTask businesses={businesses} defaults={{ plannedFor: day, status: "todo", businessId: bizFilter ?? undefined }} onCreate={create} />
                       </div>
                       {done.length > 0 && (
                         <div className="mt-4">
