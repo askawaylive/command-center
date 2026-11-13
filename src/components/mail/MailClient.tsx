@@ -343,6 +343,32 @@ export function MailClient({ businesses }: { businesses: Business[] }) {
             <Icon name="refresh" size={16} />
           </button>
         )}
+        {/* Phones: the folder rail is hidden, so folders, inboxes and Compose live here. */}
+        <select
+          value={folder}
+          onChange={(e) => setFolder(e.target.value as FolderId)}
+          className="ml-1 rounded-lg border border-line bg-transparent px-2 py-1 text-[13px] md:hidden"
+          aria-label="Folder"
+        >
+          {FOLDERS.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={biz}
+          onChange={(e) => setBiz(e.target.value)}
+          className="max-w-[110px] rounded-lg border border-line bg-transparent px-2 py-1 text-[13px] md:hidden"
+          aria-label="Inbox"
+        >
+          <option value="all">All inboxes</option>
+          {connected.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+            </option>
+          ))}
+        </select>
         <form
           className="ml-auto flex min-w-0 items-center gap-1.5 rounded-lg border border-line px-2.5 py-1"
           onSubmit={(e) => {
@@ -359,7 +385,7 @@ export function MailClient({ businesses }: { businesses: Business[] }) {
               if (!e.target.value) setSearch("");
             }}
             placeholder="Search mail"
-            className="w-36 min-w-0 bg-transparent text-[13px] outline-none placeholder:text-faint lg:w-48"
+            className="w-20 min-w-0 bg-transparent sm:w-36 text-[13px] outline-none placeholder:text-faint lg:w-48"
           />
         </form>
       </div>
@@ -515,6 +541,11 @@ export function MailClient({ businesses }: { businesses: Business[] }) {
             loadCounts();
           }}
         />
+      )}
+      {!compose && (
+        <button onClick={() => setCompose(newDraft())} className="btn btn-primary fixed bottom-24 right-5 z-30 shadow-lg md:hidden" aria-label="Compose">
+          <Icon name="pencil" size={15} /> Compose
+        </button>
       )}
       {toast && (
         <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-ink px-4 py-2 text-[14px] text-bg shadow-lg">{toast}</div>

@@ -250,7 +250,14 @@ export async function getDraft(b: Business, draftId: string) {
     to: m.to,
     cc: m.cc,
     subject: m.subject,
-    body: (m.text ?? (m.html ? m.html.replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n").replace(/<[^>]+>/g, "") : "")).replace(/\r\n/g, "\n"),
+    // The editor works in HTML. Unwrap the font wrapper we add when sending; plain-text drafts become paragraphs.
+    body: m.html
+      ? m.html.replace(/^<div style="font-family:[^"]*">([\s\S]*)<\/div>$/, "$1")
+      : (m.text ?? "")
+          .replace(/\r\n/g, "\n")
+          .split("\n")
+          .map((l) => `<p>${l.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>`)
+          .join(""),
     inReplyTo: hdr(d.message.payload, "In-Reply-To"),
     references: hdr(d.message.payload, "References"),
   };
@@ -304,7 +311,35 @@ export interface Outgoing {
 
 const cleanAddr = (s?: string) => (s ?? "").replace(/[\r\n]+/g, " ").trim();
 
+const b64lines = (t: string) => Buffer.from(t, "utf8").toString("base64").replace(/.{76}/g, "$&\r\n");
+
+/** Plain-text version of the editor's HTML, for mail apps that don't show HTML. */
+function htmlToText(html: string) {
+  return html
+    .replace(/<li[^>]*>\s*<p>/gi, "<li>")
+    .replace(/<\/p>\s*<\/li>/gi, "</li>")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "• ")
+    .replace(/<\/(p|li|h\d|blockquote|ul|ol)>/gi, "\n")
+    .replace(/<a [^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, "$2 ($1)")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function raw(o: Outgoing) {
+  const isHtml = /^\s*</.test(o.body);
+  const html = isHtml
+    ? `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5">${o.body.replace(/<blockquote>/g, '<blockquote style="margin:0 0 0 .8ex;border-left:1px solid #ccc;padding-left:1ex">')}</div>`
+    : "";
+  const text = isHtml ? htmlToText(o.body) : o.body;
+  const boundary = `cc_${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
   const lines = [
     `To: ${cleanAddr(o.to)}`,
     ...(cleanAddr(o.cc) ? [`Cc: ${cleanAddr(o.cc)}`] : []),
@@ -312,10 +347,23 @@ function raw(o: Outgoing) {
     `Subject: ${encWord(o.subject.replace(/[\r\n]+/g, " "))}`,
     ...(o.inReplyTo ? [`In-Reply-To: ${cleanAddr(o.inReplyTo)}`, `References: ${cleanAddr(o.references || o.inReplyTo)}`] : []),
     "MIME-Version: 1.0",
-    'Content-Type: text/plain; charset="UTF-8"',
-    "Content-Transfer-Encoding: base64",
-    "",
-    Buffer.from(o.body.replace(/\r?\n/g, "\r\n"), "utf8").toString("base64").replace(/.{76}/g, "$&\r\n"),
+    ...(isHtml
+      ? [
+          `Content-Type: multipart/alternative; boundary="${boundary}"`,
+          "",
+          `--${boundary}`,
+          'Content-Type: text/plain; charset="UTF-8"',
+          "Content-Transfer-Encoding: base64",
+          "",
+          b64lines(text.replace(/\r?\n/g, "\r\n")),
+          `--${boundary}`,
+          'Content-Type: text/html; charset="UTF-8"',
+          "Content-Transfer-Encoding: base64",
+          "",
+          b64lines(html),
+          `--${boundary}--`,
+        ]
+      : ['Content-Type: text/plain; charset="UTF-8"', "Content-Transfer-Encoding: base64", "", b64lines(text.replace(/\r?\n/g, "\r\n"))]),
   ];
   return b64url(lines.join("\r\n"));
 }

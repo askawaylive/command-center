@@ -18,6 +18,13 @@ const when = (iso: string) =>
 
 const size = (n: number) => (n > 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1e3))} KB`);
 
+const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const paras = (t: string) =>
+  t
+    .split(/\n{2,}/)
+    .map((p) => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`)
+    .join("");
+
 function plain(m: FullMessage) {
   if (m.text) return m.text;
   if (!m.html) return m.snippet;
@@ -143,11 +150,7 @@ export function Reader({
     const me = myEmail.toLowerCase();
     // Reply to the latest message from someone else; fall back to the latest one.
     const m = [...thread.messages].reverse().find((x) => x.fromEmail.toLowerCase() !== me) ?? thread.messages[last];
-    const quoted = plain(m)
-      .split("\n")
-      .slice(0, 400)
-      .map((l) => `> ${l}`)
-      .join("\n");
+    const quoted = paras(plain(m).split("\n").slice(0, 400).join("\n"));
     const base = { business: thread.businessId, threadId: thread.id };
     const subj = thread.subject.replace(/^(re|fwd?):\s*/i, "");
     if (kind === "forward") {
@@ -156,7 +159,7 @@ export function Reader({
         threadId: undefined,
         to: "",
         subject: `Fwd: ${subj}`,
-        body: `\n\n---------- Forwarded message ---------\nFrom: ${m.from} <${m.fromEmail}>\nDate: ${when(m.date)}\nSubject: ${m.subject}\nTo: ${m.to}\n\n${plain(m)}`,
+        body: `<p></p><p>---------- Forwarded message ---------<br>From: ${esc(`${m.from} <${m.fromEmail}>`)}<br>Date: ${esc(when(m.date))}<br>Subject: ${esc(m.subject)}<br>To: ${esc(m.to)}</p>${paras(plain(m))}`,
       });
       return;
     }
@@ -176,7 +179,7 @@ export function Reader({
       to,
       cc: others,
       subject: /^re:/i.test(thread.subject) ? thread.subject : `Re: ${subj}`,
-      body: `\n\nOn ${when(m.date)}, ${m.from} wrote:\n${quoted}`,
+      body: `<p></p><p>On ${esc(when(m.date))}, ${esc(m.from)} wrote:</p><blockquote>${quoted}</blockquote>`,
       inReplyTo: m.messageIdHeader,
       references: [m.references, m.messageIdHeader].filter(Boolean).join(" "),
     });

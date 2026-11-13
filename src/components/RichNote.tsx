@@ -16,7 +16,7 @@ export function toHtml(text: string) {
     .join("");
 }
 
-function Toolbar({ editor }: { editor: Editor }) {
+function Toolbar({ editor, email }: { editor: Editor; email?: boolean }) {
   const s = useEditorState({
     editor,
     selector: ({ editor: e }) => ({
@@ -57,9 +57,14 @@ function Toolbar({ editor }: { editor: Editor }) {
       <button className={btn(s.heading)} onClick={() => chain().toggleHeading({ level: 2 }).run()} title="Heading" aria-label="Heading">H</button>
       <button className={btn(s.bullet)} onClick={() => chain().toggleBulletList().run()} title="Bulleted list" aria-label="Bulleted list"><Icon name="list" size={15} /></button>
       <button className={btn(s.ordered)} onClick={() => chain().toggleOrderedList().run()} title="Numbered list" aria-label="Numbered list"><Icon name="listOrdered" size={15} /></button>
-      <button className={btn(s.task)} onClick={() => chain().toggleTaskList().run()} title="Checklist" aria-label="Checklist"><Icon name="checklist" size={15} /></button>
+      {!email && <button className={btn(s.task)} onClick={() => chain().toggleTaskList().run()} title="Checklist" aria-label="Checklist"><Icon name="checklist" size={15} /></button>}
       <button className={btn(s.quote)} onClick={() => chain().toggleBlockquote().run()} title="Quote" aria-label="Quote"><Icon name="quote" size={15} /></button>
       <button className={btn(s.link)} onClick={setLink} title="Link" aria-label="Link"><Icon name="link" size={15} /></button>
+      {email && (
+        <button className={btn(false)} onClick={() => chain().unsetAllMarks().clearNodes().run()} title="Clear formatting" aria-label="Clear formatting">
+          <span className="text-[12px] line-through decoration-1">T</span>
+        </button>
+      )}
     </div>
   );
 }
@@ -71,6 +76,8 @@ export function RichNote({
   placeholder,
   editable = true,
   toolbarSlot,
+  email,
+  autofocus,
 }: {
   initial: string;
   onChange?: (html: string) => void;
@@ -78,9 +85,13 @@ export function RichNote({
   editable?: boolean;
   /** Rendered at the left of the toolbar row (e.g. a section title). */
   toolbarSlot?: React.ReactNode;
+  /** Email mode: toolbar under the text (like Gmail), no checklists. */
+  email?: boolean;
+  autofocus?: boolean;
 }) {
   const editor = useEditor({
     immediatelyRender: false,
+    autofocus: autofocus ? "start" : false,
     editable,
     extensions: [
       StarterKit.configure({
@@ -109,7 +120,7 @@ export function RichNote({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {(editable || toolbarSlot) && (
+      {!email && (editable || toolbarSlot) && (
         <div className="mb-2 flex flex-wrap items-center gap-2">
           {toolbarSlot}
           {editable && editor && <Toolbar editor={editor} />}
@@ -123,6 +134,11 @@ export function RichNote({
       >
         <EditorContent editor={editor} className="h-full" />
       </div>
+      {email && editable && editor && (
+        <div className="mt-2 border-t border-line pt-2">
+          <Toolbar editor={editor} email />
+        </div>
+      )}
     </div>
   );
 }

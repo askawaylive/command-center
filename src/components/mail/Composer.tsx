@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Business } from "@/lib/types";
 import { Icon } from "../Icon";
 import { BizMark } from "../BizMark";
+import { RichNote } from "../RichNote";
 
 export interface Draft {
   business: string;
@@ -49,7 +50,7 @@ export function Composer({
   const save = async () => {
     if (!dirty.current) return;
     const cur = latest.current;
-    if (!cur.to.trim() && !cur.subject.trim() && !cur.body.trim()) return;
+    if (!cur.to.trim() && !cur.subject.trim() && !cur.body.replace(/<[^>]+>/g, "").trim()) return;
     dirty.current = false;
     setState("saving");
     const r = await fetch("/api/mail/draft", { method: "POST", body: JSON.stringify({ ...cur, draftId: draftId.current }) }).catch(() => null);
@@ -175,24 +176,15 @@ export function Composer({
             <input value={d.subject} onChange={(e) => set({ subject: e.target.value })} className={field} />
           </div>
         )}
-        <textarea
-          autoFocus={Boolean(d.to)}
-          value={d.body}
-          onChange={(e) => set({ body: e.target.value })}
-          onFocus={(e) => {
-            // Put the cursor above any quoted text.
-            if (initial.body.startsWith("\n\n") && e.currentTarget.selectionStart === e.currentTarget.value.length) e.currentTarget.setSelectionRange(0, 0);
-          }}
-          rows={mode === "full" ? 20 : 12}
-          className="min-h-[140px] w-full flex-1 resize-y bg-transparent py-3 text-[14px] leading-relaxed outline-none placeholder:text-faint"
-          placeholder="Write your message…"
-        />
+        <div className={`min-h-[180px] flex-1 py-3 text-[14px] leading-relaxed ${mode === "full" ? "" : "max-h-[50vh]"}`}>
+          <RichNote initial={initial.body} onChange={(html) => set({ body: html })} placeholder="Write your message…" email autofocus={Boolean(initial.to)} />
+        </div>
       </div>
       <div className="flex flex-wrap items-center gap-2 border-t border-line px-4 py-2.5">
         <button onClick={send} disabled={state === "sending"} className="btn btn-primary">
           <Icon name="send" size={14} /> {state === "sending" ? "Sending…" : "Send"}
         </button>
-        <span className="text-[12px] text-faint">{state === "saving" ? "Saving draft…" : state === "saved" ? "Draft saved" : "⌘↵ to send"}</span>
+        <span className="hidden text-[12px] text-faint sm:inline">{state === "saving" ? "Saving draft…" : state === "saved" ? "Draft saved" : "⌘↵ to send"}</span>
         {error && <span className="text-[13px] text-bad">{error}</span>}
         <div className="ml-auto flex items-center gap-1">
           <button onClick={discard} className="btn btn-ghost" title="Discard draft">
