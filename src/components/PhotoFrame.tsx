@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { fitImage } from "@/lib/squareImage";
 import { Icon } from "./Icon";
 
@@ -21,13 +22,22 @@ const INTERVALS = [
 ];
 
 /** Family photo slideshow: crossfades to the next picture on a timer you choose. */
-export function PhotoFrame({ initial, initialInterval, header }: { initial: Photo[]; initialInterval: number; header: React.ReactNode }) {
+export function PhotoFrame({
+  initial,
+  initialInterval,
+  header,
+}: {
+  initial: Photo[];
+  initialInterval: number;
+  header: React.ReactNode;
+}) {
   const [photos, setPhotos] = useState(initial);
   const [i, setI] = useState(0);
   const [interval, setIntervalSec] = useState(initialInterval);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [menu, setMenu] = useState(false);
+  const [gallery, setGallery] = useState(false);
   const file = useRef<HTMLInputElement>(null);
   const n = photos.length;
   const idx = n ? i % n : 0;
@@ -38,37 +48,53 @@ export function PhotoFrame({ initial, initialInterval, header }: { initial: Phot
     return () => clearInterval(t);
   }, [interval, n, idx]);
 
+  useEffect(() => {
+    if (!gallery) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setGallery(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [gallery]);
+
   const upload = async (files: FileList) => {
     setBusy(true);
     setError("");
     for (const f of Array.from(files)) {
       try {
         const src = await fitImage(f, 1600);
-        const r = await fetch("/api/photos", { method: "POST", body: JSON.stringify({ src }) });
-        if (!r.ok) throw new Error(((await r.json()) as { error?: string }).error);
+        const r = await fetch("/api/photos", {
+          method: "POST",
+          body: JSON.stringify({ src }),
+        });
+        if (!r.ok)
+          throw new Error(((await r.json()) as { error?: string }).error);
         const p = (await r.json()) as Photo;
         setPhotos((ps) => {
           setI(ps.length);
           return [...ps, p];
         });
       } catch (e) {
-        setError(e instanceof Error && e.message ? e.message : `Couldn't add ${f.name}.`);
+        setError(
+          e instanceof Error && e.message
+            ? e.message
+            : `Couldn't add ${f.name}.`,
+        );
       }
     }
     setBusy(false);
   };
 
-  const removeCurrent = async () => {
-    const p = photos[idx];
-    if (!p || !confirm("Remove this photo?")) return;
-    setPhotos((ps) => ps.filter((x) => x.id !== p.id));
-    await fetch(`/api/photos/${p.id}`, { method: "DELETE" });
+  const remove = async (id: string) => {
+    setPhotos((ps) => ps.filter((x) => x.id !== id));
+    await fetch(`/api/photos/${id}`, { method: "DELETE" });
   };
 
   const setSpeed = (s: number) => {
     setIntervalSec(s);
     setMenu(false);
-    fetch("/api/prefs/photos:interval", { method: "PUT", body: JSON.stringify({ value: s }) });
+    fetch("/api/prefs/photos:interval", {
+      method: "PUT",
+      body: JSON.stringify({ value: s }),
+    });
   };
 
   const iconBtn = "rounded-md p-1 text-muted hover:bg-sidebar hover:text-ink";
@@ -78,8 +104,14 @@ export function PhotoFrame({ initial, initialInterval, header }: { initial: Phot
       <div className="flex items-center gap-1 pb-2">
         {header}
         <div className="relative">
-          <button onClick={() => setMenu((m) => !m)} className={`${iconBtn} flex items-center gap-1 text-[12px]`} aria-label="Slideshow timer">
-            <Icon name="clock" size={13} /> {INTERVALS.find((x) => x.s === interval)?.label ?? `Every ${interval}s`}
+          <button
+            onClick={() => setMenu((m) => !m)}
+            className={`${iconBtn} flex items-center gap-1 text-[12px]`}
+            aria-label="Slideshow timer"
+          >
+            <Icon name="clock" size={13} />{" "}
+            {INTERVALS.find((x) => x.s === interval)?.label ??
+              `Every ${interval}s`}
           </button>
           {menu && (
             <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-lg border border-line bg-surface p-1 shadow-lg">
@@ -95,12 +127,22 @@ export function PhotoFrame({ initial, initialInterval, header }: { initial: Phot
             </div>
           )}
         </div>
-        <button onClick={() => file.current?.click()} className={iconBtn} aria-label="Add photos" title="Add photos">
+        <button
+          onClick={() => file.current?.click()}
+          className={iconBtn}
+          aria-label="Add photos"
+          title="Add photos"
+        >
           <Icon name="plus" size={15} />
         </button>
         {n > 0 && (
-          <button onClick={removeCurrent} className={`${iconBtn} hover:!text-bad`} aria-label="Remove this photo" title="Remove this photo">
-            <Icon name="trash" size={14} />
+          <button
+            onClick={() => setGallery(true)}
+            className={iconBtn}
+            aria-label="See all photos"
+            title="See all photos"
+          >
+            <Icon name="grid" size={14} />
           </button>
         )}
         <input
@@ -118,9 +160,14 @@ export function PhotoFrame({ initial, initialInterval, header }: { initial: Phot
 
       <div className="group relative min-h-0 flex-1 overflow-hidden rounded-xl bg-sidebar">
         {n === 0 ? (
-          <button onClick={() => file.current?.click()} className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted hover:text-ink">
+          <button
+            onClick={() => file.current?.click()}
+            className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted hover:text-ink"
+          >
             <Icon name="camera" size={26} />
-            <span className="text-[13px]">{busy ? "Adding…" : "Add family photos"}</span>
+            <span className="text-[13px]">
+              {busy ? "Adding…" : "Add family photos"}
+            </span>
           </button>
         ) : (
           <>
@@ -150,18 +197,96 @@ export function PhotoFrame({ initial, initialInterval, header }: { initial: Phot
                 >
                   <Icon name="chevronRight" size={16} />
                 </button>
-                <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
-                  {photos.map((p, k) => (
-                    <span key={p.id} className={`h-1.5 w-1.5 rounded-full ${k === idx ? "bg-white" : "bg-white/45"}`} />
-                  ))}
-                </div>
               </>
             )}
-            {busy && <div className="absolute right-2 top-2 rounded-md bg-black/45 px-2 py-0.5 text-[12px] text-white">Adding…</div>}
+            <button
+              onClick={() => setGallery(true)}
+              title="See all photos"
+              className="absolute bottom-2 right-2 rounded-full bg-black/40 px-2 py-0.5 text-[11px] tabular-nums text-white/90 backdrop-blur-sm hover:bg-black/55"
+            >
+              {idx + 1} / {n}
+            </button>
+            {busy && (
+              <div className="absolute right-2 top-2 rounded-md bg-black/45 px-2 py-0.5 text-[12px] text-white">
+                Adding…
+              </div>
+            )}
           </>
         )}
       </div>
       {error && <p className="pt-1.5 text-[12px] text-bad">{error}</p>}
+
+      {gallery &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            onClick={() => setGallery(false)}
+          >
+            <div
+              className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-line bg-bg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-label="All photos"
+            >
+              <div className="flex items-center gap-2 border-b border-line px-5 py-3">
+                <h2 className="text-[16px]">Photos in rotation</h2>
+                <span className="text-[13px] text-muted tabular-nums">{n}</span>
+                <button
+                  onClick={() => file.current?.click()}
+                  className="btn btn-ghost ml-auto"
+                >
+                  <Icon name="plus" size={14} /> Add
+                </button>
+                <button
+                  onClick={() => setGallery(false)}
+                  aria-label="Close"
+                  className="rounded-md p-1.5 text-faint hover:bg-sidebar hover:text-ink"
+                >
+                  <Icon name="x" size={16} />
+                </button>
+              </div>
+              <div className="overflow-y-auto scroll-thin p-4">
+                {n === 0 ? (
+                  <p className="py-10 text-center text-muted">No photos yet.</p>
+                ) : (
+                  <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                    {photos.map((p, k) => (
+                      <div
+                        key={p.id}
+                        className={`group/ph relative aspect-square overflow-hidden rounded-xl bg-sidebar ${k === idx ? "ring-2 ring-accent" : ""}`}
+                      >
+                        <button
+                          onClick={() => {
+                            setI(k);
+                            setGallery(false);
+                          }}
+                          className="h-full w-full"
+                          aria-label={`Show photo ${k + 1}`}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={p.src}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        </button>
+                        <button
+                          onClick={() => remove(p.id)}
+                          aria-label={`Remove photo ${k + 1}`}
+                          title="Remove"
+                          className="absolute right-1.5 top-1.5 rounded-full bg-black/55 p-1 text-white opacity-90 transition-opacity hover:bg-bad sm:opacity-0 sm:group-hover/ph:opacity-100"
+                        >
+                          <Icon name="x" size={13} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
