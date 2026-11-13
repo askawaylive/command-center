@@ -70,16 +70,16 @@ export function PixelClock({ fluid = false }: { fluid?: boolean }) {
 
   return (
     <div
-      className={`flex items-center justify-center rounded-lg border border-line bg-[#1a1918] px-2.5 py-2 shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)] ${fluid ? "w-full" : ""}`}
+      className={`flex items-center justify-center rounded-lg border border-line bg-[var(--clock-bg)] px-2.5 py-2 shadow-[var(--clock-shadow)] ${fluid ? "w-full" : ""}`}
       title={now.toLocaleString(undefined, { weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" })}
     >
-      <svg width={fluid ? "100%" : width} height={fluid ? undefined : height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${hh}:${mm}:${ss} ${ampm}`} style={{ filter: "drop-shadow(0 0 3px rgba(217,119,87,0.55))" }}>
+      <svg width={fluid ? "100%" : width} height={fluid ? undefined : height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${hh}:${mm}:${ss} ${ampm}`} style={{ filter: "var(--clock-glow)" }}>
         {placed.map((p, i) => (
-          <Glyph key={i} ch={p.ch} x={p.at} color="#e8875f" dim="rgba(232,135,95,0.07)" />
+          <Glyph key={i} ch={p.ch} x={p.at} color="var(--clock-on)" dim="var(--clock-off)" />
         ))}
         <g transform={`translate(${timeW + 6} ${height * (1 - smallScale)}) scale(${smallScale})`}>
-          <Glyph ch={ampm[0]} x={0} color="#e8875f" dim="rgba(232,135,95,0.07)" />
-          <Glyph ch={ampm[1]} x={digitW + 3} color="#e8875f" dim="rgba(232,135,95,0.07)" />
+          <Glyph ch={ampm[0]} x={0} color="var(--clock-on)" dim="var(--clock-off)" />
+          <Glyph ch={ampm[1]} x={digitW + 3} color="var(--clock-on)" dim="var(--clock-off)" />
         </g>
       </svg>
     </div>

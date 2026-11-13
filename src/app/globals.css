@@ -14,6 +14,12 @@
   --accent-soft: #f6e7df;
   --good: #4f7a4a;
   --bad: #b04a3c;
+  /* Pixel clock */
+  --clock-bg: #faf9f5;
+  --clock-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+  --clock-on: #c96442;
+  --clock-off: rgba(201, 100, 66, 0.09);
+  --clock-glow: drop-shadow(0 0 2px rgba(201, 100, 66, 0.25));
 }
 
 /* Dark: follows the system unless the toggle picked a theme (data-theme on <html>). */
@@ -31,6 +37,11 @@
     --accent-soft: #3d2c25;
     --good: #8cbf85;
     --bad: #e08877;
+    --clock-bg: #1a1918;
+    --clock-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+    --clock-on: #e8875f;
+    --clock-off: rgba(232, 135, 95, 0.07);
+    --clock-glow: drop-shadow(0 0 3px rgba(217, 119, 87, 0.55));
     color-scheme: dark;
   }
 }
@@ -47,6 +58,11 @@
     --accent-soft: #3d2c25;
     --good: #8cbf85;
     --bad: #e08877;
+    --clock-bg: #1a1918;
+    --clock-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+    --clock-on: #e8875f;
+    --clock-off: rgba(232, 135, 95, 0.07);
+    --clock-glow: drop-shadow(0 0 3px rgba(217, 119, 87, 0.55));
   color-scheme: dark;
 }
 
