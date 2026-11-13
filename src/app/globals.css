@@ -130,3 +130,42 @@ h1, h2, h3, .font-serif {
 
 .scroll-thin::-webkit-scrollbar { height: 8px; width: 8px; }
 .scroll-thin::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
+
+/* Today grid (react-grid-layout): themed placeholder and resize handles. */
+.react-grid-layout .react-grid-item.react-grid-placeholder {
+  background: var(--accent);
+  opacity: 0.12;
+  border-radius: 16px;
+}
+.react-grid-item.card.react-draggable-dragging,
+.react-grid-item.card.resizing {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  z-index: 5;
+}
+.react-grid-item.card > .react-resizable-handle {
+  background-image: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.react-grid-item.card:hover > .react-resizable-handle {
+  opacity: 1;
+}
+.react-grid-item.card > .react-resizable-handle::after {
+  border-color: var(--faint);
+}
+.react-grid-item.card > .react-resizable-handle-se {
+  width: 18px;
+  height: 18px;
+}
+.react-grid-item.card > .react-resizable-handle-se::after {
+  right: 5px;
+  bottom: 5px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--faint);
+  border-bottom: 2px solid var(--faint);
+}
+.react-grid-item.card > .react-resizable-handle-e::after,
+.react-grid-item.card > .react-resizable-handle-s::after {
+  display: none;
+}
