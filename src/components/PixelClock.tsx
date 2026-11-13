@@ -37,14 +37,14 @@ function Glyph({ ch, x, color, dim }: { ch: string; x: number; color: string; di
 }
 
 /** Live dot-matrix clock: HH:MM:SS with AM/PM, blinking colons. */
-export function PixelClock() {
+export function PixelClock({ fluid = false }: { fluid?: boolean }) {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
     setNow(new Date());
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
-  if (!now) return <div className="h-[28px] w-[200px]" />;
+  if (!now) return <div className={fluid ? "h-[40px] w-full" : "h-[28px] w-[200px]"} />;
 
   const h = now.getHours();
   const hh = String(h % 12 || 12).padStart(2, "0");
@@ -70,10 +70,10 @@ export function PixelClock() {
 
   return (
     <div
-      className="flex items-center rounded-lg border border-line bg-[#1a1918] px-2.5 py-1.5 shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)]"
+      className={`flex items-center justify-center rounded-lg border border-line bg-[#1a1918] px-2.5 py-2 shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)] ${fluid ? "w-full" : ""}`}
       title={now.toLocaleString(undefined, { weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" })}
     >
-      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${hh}:${mm}:${ss} ${ampm}`} style={{ filter: "drop-shadow(0 0 3px rgba(217,119,87,0.55))" }}>
+      <svg width={fluid ? "100%" : width} height={fluid ? undefined : height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${hh}:${mm}:${ss} ${ampm}`} style={{ filter: "drop-shadow(0 0 3px rgba(217,119,87,0.55))" }}>
         {placed.map((p, i) => (
           <Glyph key={i} ch={p.ch} x={p.at} color="#e8875f" dim="rgba(232,135,95,0.07)" />
         ))}

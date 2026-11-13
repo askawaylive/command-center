@@ -27,8 +27,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <div className="flex h-screen overflow-hidden">
           <Sidebar businesses={businesses} signOut={Boolean(process.env.APP_PASSWORD)} />
           <div className="flex min-w-0 flex-1 flex-col">
-            <div className="flex h-12 shrink-0 items-center justify-end gap-3 border-b border-line px-4">
-              <span className="md:hidden mr-auto"><ThemeToggle /></span>
+            {/* Phones: the sidebar is hidden, so the toggle and clock sit in a top bar instead. */}
+            <div className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-line px-4 md:hidden">
+              <ThemeToggle />
               <PixelClock />
             </div>
             <main className="flex-1 overflow-y-auto scroll-thin">{children}</main>

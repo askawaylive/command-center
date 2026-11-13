@@ -5,6 +5,7 @@ import type { Business } from "@/lib/types";
 import { Icon } from "./Icon";
 import { BizMark } from "./BizMark";
 import { ThemeToggle } from "./ThemeToggle";
+import { PixelClock } from "./PixelClock";
 
 const NAV = [
   { href: "/", label: "Today", icon: "sun" },
@@ -47,7 +48,10 @@ export function Sidebar({ businesses, signOut }: { businesses: Business[]; signO
         ))}
       </nav>
       <div className="mt-auto">
-        <div className="mb-3 px-3"><ThemeToggle /></div>
+        <div className="mb-3 space-y-3 px-3">
+          <PixelClock fluid />
+          <ThemeToggle />
+        </div>
         <Link href="/settings" className={item(path === "/settings")}>
           <Icon name="gear" /> Connections
         </Link>
