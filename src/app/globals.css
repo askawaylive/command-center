@@ -169,3 +169,44 @@ h1, h2, h3, .font-serif {
 .react-grid-item.card > .react-resizable-handle-s::after {
   display: none;
 }
+
+/* Rich text notes (TipTap) */
+.rich-note { font-size: 14px; line-height: 1.6; }
+.rich-note > * + * { margin-top: 0.4em; }
+.rich-note h2 { font-size: 17px; font-weight: 600; margin-top: 0.8em; }
+.rich-note h3 { font-size: 15px; font-weight: 600; margin-top: 0.6em; }
+.rich-note ul { list-style: disc; padding-left: 1.3em; }
+.rich-note ol { list-style: decimal; padding-left: 1.4em; }
+.rich-note li > p { margin: 0; }
+.rich-note li + li { margin-top: 0.15em; }
+.rich-note a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.rich-note blockquote { border-left: 3px solid var(--border); padding-left: 0.8em; color: var(--muted); }
+.rich-note code { background: var(--sidebar); border-radius: 4px; padding: 0.1em 0.3em; font-size: 0.92em; }
+.rich-note ul[data-type="taskList"] { list-style: none; padding-left: 0.1em; }
+.rich-note ul[data-type="taskList"] li { display: flex; gap: 0.5em; align-items: flex-start; }
+.rich-note ul[data-type="taskList"] li > label { margin-top: 0.2em; user-select: none; }
+.rich-note ul[data-type="taskList"] li > label input { accent-color: var(--accent); width: 14px; height: 14px; }
+.rich-note ul[data-type="taskList"] li > div { flex: 1; }
+.rich-note ul[data-type="taskList"] li[data-checked="true"] > div { color: var(--faint); text-decoration: line-through; }
+.rich-note p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--faint);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Mind map canvas (React Flow) */
+.mindmap.react-flow {
+  --xy-background-color: var(--bg);
+  --xy-node-background-color: transparent;
+  --xy-node-border: none;
+  --xy-node-boxshadow-selected: none;
+  --xy-controls-button-background-color: var(--surface);
+  --xy-controls-button-background-color-hover: var(--sidebar);
+  --xy-controls-button-color: var(--muted);
+  --xy-controls-button-border-color: var(--border);
+}
+.mindmap .react-flow__node-mind { cursor: grab; }
+.mindmap .react-flow__controls { border-radius: 10px; overflow: hidden; border: 1px solid var(--border); box-shadow: none; }
+.mindmap .react-flow__node-toolbar { z-index: 10; }

@@ -120,3 +120,15 @@ export async function setKV(key: string, value: unknown) {
   f.kv[key] = value;
   writeFile(f);
 }
+
+/** All key/value pairs whose key starts with `prefix`. */
+export async function listKV<T>(prefix: string): Promise<{ key: string; value: T }[]> {
+  const p = await db();
+  if (p) {
+    const { rows } = await p.query("select key, value from kv where starts_with(key, $1)", [prefix]);
+    return rows.map((r) => ({ key: r.key as string, value: r.value as T }));
+  }
+  return Object.entries(readFile().kv)
+    .filter(([k]) => k.startsWith(prefix))
+    .map(([key, value]) => ({ key, value: value as T }));
+}

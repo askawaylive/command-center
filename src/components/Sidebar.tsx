@@ -12,7 +12,9 @@ const NAV = [
   { href: "/board", label: "Launch board", icon: "board" },
   { href: "/dashboard", label: "Metrics", icon: "chart" },
   { href: "/inbox", label: "Inbox", icon: "mail" },
+  { href: "/notes", label: "Notes", icon: "note" },
   { href: "/contacts", label: "Contacts", icon: "users" },
+  { href: "/mindmap", label: "Mind Map", icon: "map" },
   { href: "/agent", label: "Ask Claude", icon: "spark" },
 ];
 

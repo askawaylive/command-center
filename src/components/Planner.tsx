@@ -8,6 +8,8 @@ import { useTasks, fmtMinutes } from "./useTasks";
 import { Icon } from "./Icon";
 import { BizMark } from "./BizMark";
 import { TaskDetails } from "./TaskDetails";
+import { RichNote } from "./RichNote";
+import Link from "next/link";
 import { PhotoFrame, type Photo } from "./PhotoFrame";
 import { Responsive, WidthProvider, type Layouts } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
@@ -100,17 +102,21 @@ function DayNotes({ day, header }: { day: string; header: React.ReactNode }) {
     <div className="flex h-full flex-col">
       <div className="mb-2 flex items-center justify-between gap-2">
         {header}
+        <Link href="/notes" className="shrink-0 text-[12px] text-faint hover:text-accent">All notes</Link>
         <span className="shrink-0 text-[12px] text-faint">
           {state === "saving" ? "Saving…" : state === "error" ? "Couldn't save" : state === "saved" && text ? "Saved" : ""}
         </span>
       </div>
-      <textarea
-        value={text}
-        disabled={state === "loading"}
-        onChange={(e) => save(e.target.value)}
-        placeholder="Jot down anything from today: calls, numbers, ideas, who said what…"
-        className="min-h-0 w-full flex-1 resize-none bg-transparent text-[14px] leading-relaxed outline-none placeholder:text-faint"
-      />
+      <div className="min-h-0 flex-1">
+        {state !== "loading" && (
+          <RichNote
+            key={day}
+            initial={text}
+            onChange={save}
+            placeholder="Jot down anything from today: calls, numbers, ideas, who said what…"
+          />
+        )}
+      </div>
     </div>
   );
 }
