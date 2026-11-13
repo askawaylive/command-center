@@ -37,7 +37,7 @@ export function InboxView({ emails, businesses, fixedBusiness }: { emails: Email
         </div>
       )}
       <div className="card divide-y divide-[var(--border)] overflow-hidden">
-        {list.length === 0 && <div className="p-6 text-muted">Inbox zero. Nice.</div>}
+        {list.length === 0 && <div className="p-6 text-muted">No emails here. If an inbox isn&apos;t connected yet, connect it on the <a href="/settings" className="underline">Connections</a> page.</div>}
         {list.map((e) => (
           <div key={e.id} className="group flex items-start gap-3 px-5 py-3.5 hover:bg-bg">
             <span className="mt-2 h-2 w-2 shrink-0 rounded-full" style={{ background: e.unread ? "var(--accent)" : "transparent" }} />
@@ -49,7 +49,6 @@ export function InboxView({ emails, businesses, fixedBusiness }: { emails: Email
                   </span>
                 )}
                 <span className={e.unread ? "font-semibold" : "text-muted"}>{e.from}</span>
-                {!e.live && <span className="text-[11px] text-faint">sample</span>}
                 <span className="ml-auto shrink-0 text-[12px] text-faint">
                   {new Date(e.date).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                 </span>

@@ -11,8 +11,22 @@ const KEY = "businesses";
 export const BUSINESS_COLORS = ["#eb6834", "#2a78d6", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"];
 
 /** Businesses live in the database (editable in the app); data/businesses.json is only the starting point. */
+/** Placeholder taglines from the first version, cleared once so only Scott's own text shows. */
+const DEMO_TAGLINES = new Set(["Live Q&A platform", "Show & studio", "Home goods store", "Tanning products"]);
+const CLEANED = "cleanup:demo-taglines-v1";
+
 export async function getBusinesses(): Promise<Business[]> {
   const saved = await getKV<Business[]>(KEY);
+  if (saved && !(await getKV<boolean>(CLEANED))) {
+    const next = saved.map((b) => ({
+      ...b,
+      tagline: b.tagline && DEMO_TAGLINES.has(b.tagline) ? "" : b.tagline,
+      name: b.id === "littletan" && b.name === "Little Tan" ? "Little Tandem" : b.name,
+    }));
+    await setKV(KEY, next);
+    await setKV(CLEANED, true);
+    return next;
+  }
   if (saved) return saved;
   return JSON.parse(fs.readFileSync(SEED, "utf8")) as Business[];
 }

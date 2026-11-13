@@ -88,7 +88,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
           <div className="mt-4 flex flex-wrap gap-3 text-[13px] text-muted">
             {m.streams.map((s) => (
               <span key={s.source + s.account} className="rounded-lg border border-line px-2.5 py-1 capitalize">
-                {s.source} · {money(s.revenue30d)} {s.live ? "" : "(sample)"}
+                {s.source} · {money(s.revenue30d)} {s.live ? "" : "· not connected"}
               </span>
             ))}
           </div>

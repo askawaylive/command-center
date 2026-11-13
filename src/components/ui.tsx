@@ -3,8 +3,8 @@ export const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
 export function SampleBadge({ live }: { live: boolean }) {
   if (live) return <span className="rounded-md bg-sidebar px-1.5 py-0.5 text-[11px] text-good">Live</span>;
   return (
-    <span className="rounded-md bg-sidebar px-1.5 py-0.5 text-[11px] text-faint" title="Connect this account in .env.local to see real numbers">
-      Sample data
+    <span className="rounded-md bg-sidebar px-1.5 py-0.5 text-[11px] text-faint" title="Add this account's key on the Connections page to see real numbers">
+      Not connected
     </span>
   );
 }

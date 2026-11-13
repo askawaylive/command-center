@@ -18,7 +18,7 @@ export default async function SettingsPage() {
   const businesses = await getBusinesses();
   return (
     <div className="pb-10">
-      <PageHeader title="Connections" subtitle="Add keys to .env.local and restart. Anything not connected shows sample data." />
+      <PageHeader title="Connections" subtitle="Add keys on Render’s Environment page. Anything not connected shows as zero until it is." />
       <div className="px-8">
         <div className="card divide-y divide-[var(--border)]">
           {status.map((s) => (

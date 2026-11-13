@@ -2,10 +2,9 @@ import "server-only";
 import type { BankAccount, Business, BusinessMetrics, Email, RevenueStream, DailyPoint } from "./types";
 import { getBusinesses } from "./businesses";
 import { cached } from "./cache";
-import { mockStream, mockEmails, mockDaily } from "./mock";
 import { fetchStripe, stripeKey } from "./integrations/stripe";
 import { fetchShopify, shopifyCreds } from "./integrations/shopify";
-import { fetchMercuryAccounts, mockBankAccounts } from "./integrations/mercury";
+import { fetchMercuryAccounts } from "./integrations/mercury";
 import { fetchGmail, gmailRefreshToken } from "./integrations/gmail";
 import { lastNDays } from "./dates";
 
@@ -34,7 +33,7 @@ export function getBankAccounts(): Promise<BankAccount[]> {
       return await fetchMercuryAccounts(businesses);
     } catch (e) {
       errors.set("mercury", String(e));
-      return mockBankAccounts(businesses);
+      return [];
     }
   });
 }
@@ -58,10 +57,7 @@ async function metricsFor(b: Business, accounts: BankAccount[]): Promise<Busines
         errors.set(key, String(e));
       }
     }
-    const m = mockStream(b, "stripe", acct);
-    streams.push(m);
-    series.push(scaleDaily(mockDaily(b.id + acct).slice(-30), m.revenue30d));
-    revenuePrev30d += m.revenue30d * 0.88;
+    streams.push({ source: "stripe", account: acct, revenue30d: 0, orders30d: 0, live: false });
   }
 
   for (const acct of b.sources.shopify ?? []) {
@@ -78,13 +74,10 @@ async function metricsFor(b: Business, accounts: BankAccount[]): Promise<Busines
         errors.set(key, String(e));
       }
     }
-    const m = mockStream(b, "shopify", acct);
-    streams.push(m);
-    series.push(scaleDaily(mockDaily(b.id + acct).slice(-30), m.revenue30d));
-    revenuePrev30d += m.revenue30d * 0.85;
+    streams.push({ source: "shopify", account: acct, revenue30d: 0, orders30d: 0, live: false });
   }
 
-  // No revenue sources configured: show zeros rather than made-up numbers.
+  // Anything not connected counts as zero. No made-up numbers.
 
   const daily = mergeDaily(series);
   const cash = accounts.filter((a) => a.businessId === b.id).reduce((s, a) => s + a.balance, 0);
@@ -100,11 +93,6 @@ async function metricsFor(b: Business, accounts: BankAccount[]): Promise<Busines
     streams,
     live: streams.some((s) => s.live) || accounts.some((a) => a.businessId === b.id && a.live),
   };
-}
-
-function scaleDaily(daily: DailyPoint[], total: number): DailyPoint[] {
-  const sum = daily.reduce((s, d) => s + d.revenue, 0) || 1;
-  return daily.map((d) => ({ date: d.date, revenue: Math.round((d.revenue / sum) * total) }));
 }
 
 export async function getAllMetrics(): Promise<BusinessMetrics[]> {
@@ -131,7 +119,7 @@ export async function getEmails(businessId?: string): Promise<Email[]> {
           errors.set(key, String(e));
         }
       }
-      return acct ? mockEmails(b) : [];
+      return [];
     }),
   );
   return lists.flat().sort((a, b) => b.date.localeCompare(a.date));

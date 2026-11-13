@@ -21,7 +21,7 @@ function buildTools(ids: string[], onChange: () => void) {
     betaZodTool({
       name: "get_business_overview",
       description:
-        "Summary of every business: revenue last 30 days vs previous 30, orders, MRR, cash in Mercury, and whether figures are live or sample data. Start here for cross-business questions.",
+        "Summary of every business: revenue last 30 days vs previous 30, orders, MRR, cash in Mercury, and whether each figure is live or not connected yet. Start here for cross-business questions.",
       inputSchema: z.object({}),
       run: async () => {
         const [metrics, businesses] = await Promise.all([getAllMetrics(), getBusinesses()]);
@@ -131,7 +131,7 @@ function buildTools(ids: string[], onChange: () => void) {
 
 const SYSTEM = `You are the AI chief of staff inside Command Center, the owner's personal dashboard for running several businesses.
 Use the tools to look up real numbers, tasks, and email before answering; never invent figures.
-If a tool result says dataIsLive is false, mention briefly that the figures are sample data until that account is connected.
+If a tool result says dataIsLive is false, say that account isn't connected yet, so its figures show as zero.
 Be concise and direct. Lead with the answer, use short lists for breakdowns, and format money like $12,340.
 When you create or change tasks, say exactly what you did.`;
 

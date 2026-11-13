@@ -1,46 +1,38 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import type { Task } from "./types";
-import { isoDay, addDays } from "./dates";
-import { deleteDoc, listDocs, putDocs } from "./store";
+import { deleteDoc, getKV, listDocs, putDocs, setKV } from "./store";
 
 const COLL = "tasks";
 
-function seed(): { tasks: Task[] } {
-  const t = isoDay();
-  const mk = (p: Partial<Task> & Pick<Task, "title" | "businessId">): Task => ({
-    id: randomUUID(),
-    status: "todo",
-    priority: "medium",
-    createdAt: new Date().toISOString(),
-    ...p,
-  });
-  return {
-    tasks: [
-      mk({ title: "Finalize App Store screenshots", businessId: "askaway", launch: "Askaway 2.3", plannedFor: t, estimateMin: 60, priority: "high", status: "doing" }),
-      mk({ title: "Write launch email to waitlist", businessId: "askaway", launch: "Askaway 2.3", plannedFor: t, estimateMin: 45, priority: "high" }),
-      mk({ title: "Reply to Jordan about Thursday session", businessId: "askaway", plannedFor: t, estimateMin: 10 }),
-      mk({ title: "Approve episode 4 callback list", businessId: "sitcom", plannedFor: t, estimateMin: 30, dueDate: addDays(t, 3) }),
-      mk({ title: "Pay venue deposit for Dec 6", businessId: "sitcom", plannedFor: addDays(t, 1), estimateMin: 15, priority: "high" }),
-      mk({ title: "Review rough cut", businessId: "sitcom", plannedFor: addDays(t, 1), estimateMin: 45 }),
-      mk({ title: "Holiday gift guide landing page", businessId: "homelove", launch: "Holiday drop", plannedFor: addDays(t, 1), estimateMin: 90, priority: "high" }),
-      mk({ title: "Confirm linen throw restock with Lina", businessId: "homelove", plannedFor: t, estimateMin: 15 }),
-      mk({ title: "Answer Maya about order #1043", businessId: "homelove", plannedFor: t, estimateMin: 10, status: "done", completedAt: new Date().toISOString() }),
-      mk({ title: "Reorder Glow Drops (30ml)", businessId: "littletan", plannedFor: t, estimateMin: 20, priority: "high" }),
-      mk({ title: "Pick winter drop TikTok", businessId: "littletan", launch: "Winter drop", plannedFor: addDays(t, 2), estimateMin: 20 }),
-      mk({ title: "Set up wholesale price list", businessId: "littletan", status: "backlog" }),
-      mk({ title: "Press kit for Askaway launch", businessId: "askaway", launch: "Askaway 2.3", status: "backlog", dueDate: addDays(t, 7) }),
-      mk({ title: "Spring collection sourcing", businessId: "homelove", status: "backlog" }),
-    ],
-  };
-}
+/** Titles of the sample tasks the first version shipped with, removed once from existing databases. */
+const DEMO_TITLES = new Set([
+  "Finalize App Store screenshots",
+  "Write launch email to waitlist",
+  "Reply to Jordan about Thursday session",
+  "Approve episode 4 callback list",
+  "Pay venue deposit for Dec 6",
+  "Review rough cut",
+  "Holiday gift guide landing page",
+  "Confirm linen throw restock with Lina",
+  "Answer Maya about order #1043",
+  "Reorder Glow Drops (30ml)",
+  "Pick winter drop TikTok",
+  "Set up wholesale price list",
+  "Press kit for Askaway launch",
+  "Spring collection sourcing",
+]);
+const CLEANED = "cleanup:demo-tasks-v1";
 
 async function all(): Promise<Task[]> {
-  const existing = await listDocs<Task>(COLL);
-  if (existing) return existing.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-  const { tasks } = seed();
-  await putDocs(COLL, tasks);
-  return tasks;
+  let existing = (await listDocs<Task>(COLL)) ?? [];
+  if (!(await getKV<boolean>(CLEANED))) {
+    const demo = existing.filter((t) => DEMO_TITLES.has(t.title));
+    for (const t of demo) await deleteDoc(COLL, t.id);
+    existing = existing.filter((t) => !DEMO_TITLES.has(t.title));
+    await setKV(CLEANED, true);
+  }
+  return existing.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
 export async function listTasks(filter: { businessId?: string } = {}): Promise<Task[]> {

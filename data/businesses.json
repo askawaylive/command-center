@@ -2,7 +2,7 @@
   {
     "id": "askaway",
     "name": "Askaway",
-    "tagline": "Live Q&A platform",
+    "tagline": "",
     "color": "#eb6834",
     "sources": {
       "stripe": [
@@ -17,7 +17,7 @@
   {
     "id": "sitcom",
     "name": "Sitcom",
-    "tagline": "Show & studio",
+    "tagline": "",
     "color": "#2a78d6",
     "sources": {
       "stripe": [
@@ -32,7 +32,7 @@
   {
     "id": "homelove",
     "name": "Home Love",
-    "tagline": "Home goods store",
+    "tagline": "",
     "color": "#1baf7a",
     "sources": {
       "shopify": [
@@ -46,8 +46,8 @@
   },
   {
     "id": "littletan",
-    "name": "Little Tan",
-    "tagline": "Tanning products",
+    "name": "Little Tandem",
+    "tagline": "",
     "color": "#eda100",
     "sources": {
       "shopify": [

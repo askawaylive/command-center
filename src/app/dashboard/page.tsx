@@ -67,7 +67,7 @@ export default async function Dashboard() {
                         <div className="flex flex-wrap gap-1.5">
                           {m.streams.map((s) => (
                             <span key={s.source + s.account} className="rounded-md border border-line px-1.5 py-0.5 text-[11px] text-muted capitalize">
-                              {s.source}{s.live ? "" : " · sample"}
+                              {s.source}{s.live ? "" : " · not connected"}
                             </span>
                           ))}
                         </div>
@@ -83,6 +83,7 @@ export default async function Dashboard() {
         <section className="card p-5">
           <h2 className="font-serif text-[20px] mb-3">Mercury accounts</h2>
           <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+            {accounts.length === 0 && <div className="text-[14px] text-muted">Mercury isn&apos;t connected yet. Add MERCURY_API_TOKEN on Render to see balances.</div>}
             {accounts.map((a) => (
               <div key={a.id} className="rounded-xl border border-line p-3">
                 <div className="flex items-center justify-between text-[12px] text-muted">
