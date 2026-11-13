@@ -12,6 +12,7 @@ import { Delta, SampleBadge, Stat, money } from "@/components/ui";
 import { CommissionTracker } from "@/components/CommissionTracker";
 import { businessType, typeLabel } from "@/lib/commission";
 import { listJobs } from "@/lib/jobs";
+import { syncPaintscout } from "@/lib/integrations/paintscout";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
   if (!m) notFound();
   const type = businessType(b);
   const commission = type === "commission";
+  const psStatus = commission ? await syncPaintscout(id) : null;
   const jobs = commission ? await listJobs(id) : [];
 
   return (
@@ -44,7 +46,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ id: s
       </header>
       {commission ? (
         <div className="px-8">
-          <CommissionTracker business={b} initial={jobs} />
+          <CommissionTracker business={b} initial={jobs} paintscout={psStatus} />
         </div>
       ) : (
       <div className="space-y-6 px-8">

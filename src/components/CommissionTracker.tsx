@@ -157,7 +157,71 @@ function JobEditor({
   );
 }
 
-export function CommissionTracker({ business, initial }: { business: Business; initial: Job[] }) {
+type PSStatus = { connected: boolean; lastSync?: string; error?: string; owners: { id: string; name: string; email?: string; quotes: number }[]; ownerId?: string; imported?: number };
+
+function ago(iso?: string) {
+  if (!iso) return "never";
+  const m = Math.round((Date.now() - Date.parse(iso)) / 60_000);
+  return m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`;
+}
+
+function PaintScoutBar({ status, syncing, onSync }: { status: PSStatus | null; syncing: boolean; onSync: (ownerId?: string) => void }) {
+  if (!status) return null;
+  if (!status.connected)
+    return (
+      <div className="card flex flex-wrap items-center gap-3 p-4 text-[13px]">
+        <span className="font-medium">Connect PaintScout</span>
+        <span className="text-muted">
+          In PaintScout go to Account Settings → API Keys → Create New API Key, then add it on Render as <code className="rounded bg-sidebar px-1">PAINTSCOUT_API_KEY</code>. Your estimates will then fill in here automatically.
+        </span>
+      </div>
+    );
+  const needsOwner = !status.ownerId && status.owners.length > 1;
+  const owner = status.owners.find((o) => o.id === status.ownerId);
+  return (
+    <div className="card flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 text-[13px]">
+      <span className={`h-2 w-2 rounded-full ${status.error ? "bg-bad" : "bg-good"}`} />
+      <span className="font-medium">PaintScout</span>
+      {status.error ? (
+        <span className="text-bad">{status.error}</span>
+      ) : needsOwner ? (
+        <span className="text-muted">Your account sees quotes from several people. Which ones are yours?</span>
+      ) : (
+        <span className="text-muted">
+          Synced {ago(status.lastSync)}
+          {owner ? ` · ${owner.name}'s quotes` : ""}
+          {status.imported !== undefined ? ` · ${status.imported} estimates` : ""}
+        </span>
+      )}
+      {status.owners.length > 1 && (
+        <select className="input !w-auto !py-1" value={status.ownerId ?? ""} onChange={(e) => e.target.value && onSync(e.target.value)} aria-label="Whose quotes">
+          <option value="">Choose estimator…</option>
+          {status.owners.map((o) => (
+            <option key={o.id} value={o.id}>{o.name} ({o.quotes})</option>
+          ))}
+        </select>
+      )}
+      <button onClick={() => onSync()} disabled={syncing} className="btn btn-ghost ml-auto border border-line !py-1 disabled:opacity-50">
+        <Icon name="refresh" size={13} /> {syncing ? "Syncing…" : "Sync now"}
+      </button>
+    </div>
+  );
+}
+
+export function CommissionTracker({ business, initial, paintscout }: { business: Business; initial: Job[]; paintscout?: PSStatus | null }) {
+  const [ps, setPs] = useState<PSStatus | null>(paintscout ?? null);
+  const [syncing, setSyncing] = useState(false);
+  const sync = async (ownerId?: string) => {
+    setSyncing(true);
+    try {
+      const r = await fetch("/api/paintscout", { method: "POST", body: JSON.stringify({ businessId: business.id, ownerId }) });
+      const d = (await r.json()) as { status: PSStatus; jobs: Job[] };
+      setPs(d.status);
+      if (d.jobs) setJobs(d.jobs);
+    } finally {
+      setSyncing(false);
+    }
+  };
   const s = commissionSettings(business);
   const [jobs, setJobs] = useState(initial);
   const [today, setToday] = useState(() => isoDay());
@@ -217,6 +281,7 @@ export function CommissionTracker({ business, initial }: { business: Business; i
   return (
     <div className="flex">
       <div className={`min-w-0 flex-1 space-y-6 transition-[padding] ${selected ? "lg:pr-[372px]" : ""}`}>
+        <PaintScoutBar status={ps} syncing={syncing} onSync={sync} />
         <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
           <Tile
             label={`Payday · early ${monthLabel(nextMonth(thisMonth), { month: "long" })}`}

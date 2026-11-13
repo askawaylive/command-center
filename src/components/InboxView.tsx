@@ -2,6 +2,7 @@
 import { useState } from "react";
 import type { Business, Email } from "@/lib/types";
 import { Icon } from "./Icon";
+import { BizMark } from "./BizMark";
 
 export function InboxView({ emails, businesses, fixedBusiness }: { emails: Email[]; businesses: Business[]; fixedBusiness?: string }) {
   const [biz, setBiz] = useState(fixedBusiness ?? "all");
@@ -26,9 +27,9 @@ export function InboxView({ emails, businesses, fixedBusiness }: { emails: Email
             <button
               key={b.id}
               onClick={() => setBiz(b.id)}
-              className={`-mb-px border-b-2 px-3 py-2 text-[14px] ${biz === b.id ? "border-accent text-ink" : "border-transparent text-muted hover:text-ink"}`}
+              className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-[14px] ${biz === b.id ? "border-accent text-ink" : "border-transparent text-muted hover:text-ink"}`}
             >
-              {b.color && <span className="mr-1.5 inline-block h-2 w-2 rounded-full" style={{ background: b.color }} />}
+              {"sources" in b && <BizMark business={b} size={18} />}
               {b.name}
               {unread(b.id === "all" ? undefined : b.id) > 0 && <span className="ml-1.5 text-[12px] text-accent">{unread(b.id === "all" ? undefined : b.id)}</span>}
             </button>
@@ -42,11 +43,12 @@ export function InboxView({ emails, businesses, fixedBusiness }: { emails: Email
             <span className="mt-2 h-2 w-2 shrink-0 rounded-full" style={{ background: e.unread ? "var(--accent)" : "transparent" }} />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 text-[13px]">
+                {byId[e.businessId] && (
+                  <span title={byId[e.businessId].name} className="shrink-0">
+                    <BizMark business={byId[e.businessId]} size={18} />
+                  </span>
+                )}
                 <span className={e.unread ? "font-semibold" : "text-muted"}>{e.from}</span>
-                <span className="inline-flex items-center gap-1 rounded-md bg-sidebar px-1.5 py-0.5 text-[11px] text-muted">
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: byId[e.businessId]?.color }} />
-                  {byId[e.businessId]?.name}
-                </span>
                 {!e.live && <span className="text-[11px] text-faint">sample</span>}
                 <span className="ml-auto shrink-0 text-[12px] text-faint">
                   {new Date(e.date).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}

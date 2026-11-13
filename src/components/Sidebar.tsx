@@ -25,7 +25,7 @@ export function Sidebar({ businesses, signOut }: { businesses: Business[]; signO
       active ? "bg-surface text-ink shadow-[0_1px_2px_rgba(0,0,0,0.04)] border border-line" : "text-muted hover:text-ink hover:bg-surface/60 border border-transparent"
     }`;
   return (
-    <aside className="hidden md:flex w-60 shrink-0 flex-col bg-sidebar border-r border-line px-3 py-5">
+    <aside className="hidden md:flex w-60 shrink-0 flex-col overflow-y-auto scroll-thin bg-sidebar border-r border-line px-3 py-5">
       <div className="px-3 pb-6 flex items-center gap-2">
         <span className="text-accent"><Icon name="spark" size={20} /></span>
         <span className="font-serif text-[19px] tracking-tight">Command Center</span>
@@ -50,7 +50,7 @@ export function Sidebar({ businesses, signOut }: { businesses: Business[]; signO
           </Link>
         ))}
       </nav>
-      <div className="mt-auto">
+      <div className="mt-auto pt-6">
         <div className="mb-2 px-3">
           <PixelClock fluid />
         </div>
