@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getThread, threadAction, type ThreadAction } from "@/lib/mail";
+import { forgetCounts, getThread, threadAction, type ThreadAction } from "@/lib/mail";
 import { clearCache } from "@/lib/cache";
 import { mailBusiness, mailError } from "../_shared";
 
@@ -11,7 +11,10 @@ export async function GET(req: Request) {
     const b = await mailBusiness(u.searchParams.get("business"));
     const id = u.searchParams.get("id") ?? "";
     const t = await getThread(b, id);
-    if (t.messages.some((m) => m.unread)) await threadAction(b, id, "read").catch(() => {});
+    if (t.messages.some((m) => m.unread)) {
+      await threadAction(b, id, "read").catch(() => {});
+      forgetCounts();
+    }
     return NextResponse.json(t);
   } catch (e) {
     return mailError(e);
@@ -30,6 +33,7 @@ export async function POST(req: Request) {
       await threadAction(b, it.id, j.action);
     }
     clearCache();
+    forgetCounts();
     return NextResponse.json({ ok: true });
   } catch (e) {
     return mailError(e);

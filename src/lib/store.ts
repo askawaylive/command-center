@@ -73,6 +73,29 @@ export async function listDocs<T>(collection: string): Promise<T[] | undefined> 
   return f.docs[collection] ? (Object.values(f.docs[collection]) as T[]) : undefined;
 }
 
+/** One document by id, without loading the whole collection. */
+export async function getDoc<T>(collection: string, id: string): Promise<T | undefined> {
+  const p = await db();
+  if (p) {
+    const { rows } = await p.query("select data from docs where collection = $1 and id = $2", [collection, id]);
+    return rows[0]?.data as T | undefined;
+  }
+  return readFile().docs[collection]?.[id] as T | undefined;
+}
+
+/** Only some top-level fields of every document (keeps big blobs like images out of the query). */
+export async function listDocFields<T>(collection: string, fields: string[]): Promise<T[]> {
+  const p = await db();
+  if (p) {
+    const sel = fields.map((f, i) => `data->>$${i + 2} as "${f.replace(/[^a-zA-Z0-9_]/g, "")}"`).join(", ");
+    const { rows } = await p.query(`select ${sel} from docs where collection = $1`, [collection, ...fields]);
+    return rows as T[];
+  }
+  return Object.values(readFile().docs[collection] ?? {}).map(
+    (d) => Object.fromEntries(fields.map((f) => [f, (d as Record<string, unknown>)[f]])) as T,
+  );
+}
+
 export async function putDocs(collection: string, docs: { id: string }[]) {
   const p = await db();
   if (p) {

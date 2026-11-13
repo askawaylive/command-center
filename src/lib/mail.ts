@@ -181,24 +181,48 @@ export async function listThreads(b: Business, folder: Folder, q = "", pageToken
   if (q) params.set("q", q);
   if (pageToken) params.set("pageToken", pageToken);
   if (folder === "spam" || folder === "trash") params.set("includeSpamTrash", "true");
-  const r = await api<{ threads?: { id: string }[]; nextPageToken?: string }>(b, `threads?${params}`);
+  const r = await api<{ threads?: { id: string; historyId?: string }[]; nextPageToken?: string }>(b, `threads?${params}`);
   const threads = await Promise.all(
     (r.threads ?? []).map(async (t) => {
+      // A thread's historyId changes whenever anything in it changes, so an unchanged
+      // conversation is served from memory instead of another call to Gmail.
+      const ck = `${b.id}:${t.id}:${t.historyId ?? ""}`;
+      const hit = t.historyId ? summaries.get(ck) : undefined;
+      if (hit) return hit;
       const full = await api<{ messages: GMessage[] }>(b, `threads/${t.id}?format=metadata&${META}`);
-      return summarize(b, full.messages);
+      const s = summarize(b, full.messages);
+      if (t.historyId) remember(ck, s);
+      return s;
     }),
   );
   return { threads, nextPageToken: r.nextPageToken };
 }
 
-export async function profileEmail(b: Business) {
-  return (await api<{ emailAddress: string }>(b, "profile")).emailAddress;
+const summaries = new Map<string, ThreadSummary>();
+function remember(k: string, v: ThreadSummary) {
+  summaries.set(k, v);
+  if (summaries.size > 3000) summaries.delete(summaries.keys().next().value!);
 }
 
+const profiles = new Map<string, string>();
+export async function profileEmail(b: Business) {
+  const k = b.sources.gmail?.account ?? b.id;
+  if (!profiles.has(k)) profiles.set(k, (await api<{ emailAddress: string }>(b, "profile")).emailAddress);
+  return profiles.get(k)!;
+}
+
+const countCache = new Map<string, { at: number; v: { inbox: number; spam: number; drafts: number } }>();
+export function forgetCounts() {
+  countCache.clear();
+}
 export async function folderCounts(b: Business) {
+  const hit = countCache.get(b.id);
+  if (hit && Date.now() - hit.at < 30_000) return hit.v;
   const get = (id: string) => api<{ threadsUnread?: number; threadsTotal?: number }>(b, `labels/${id}`).catch(() => ({ threadsUnread: 0, threadsTotal: 0 }));
   const [inbox, spam, draft] = await Promise.all([get("INBOX"), get("SPAM"), get("DRAFT")]);
-  return { inbox: inbox.threadsUnread ?? 0, spam: spam.threadsUnread ?? 0, drafts: draft.threadsTotal ?? 0 };
+  const v = { inbox: inbox.threadsUnread ?? 0, spam: spam.threadsUnread ?? 0, drafts: draft.threadsTotal ?? 0 };
+  countCache.set(b.id, { at: Date.now(), v });
+  return v;
 }
 
 function walk(p: Part, out: { html?: string; text?: string; attachments: Omit<Attachment, "messageId">[] }) {

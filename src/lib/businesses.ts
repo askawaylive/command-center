@@ -15,7 +15,18 @@ export const BUSINESS_COLORS = ["#eb6834", "#2a78d6", "#1baf7a", "#eda100", "#e8
 const DEMO_TAGLINES = new Set(["Live Q&A platform", "Show & studio", "Home goods store", "Tanning products"]);
 const CLEANED = "cleanup:demo-taglines-v1";
 
+// Every page reads the business list (the sidebar shows it), so keep it in memory.
+// The app runs as a single server, and saveBusinesses refreshes it.
+let memo: { at: number; list: Business[] } | undefined;
+
 export async function getBusinesses(): Promise<Business[]> {
+  if (memo && Date.now() - memo.at < 60_000) return memo.list;
+  const list = await loadBusinesses();
+  memo = { at: Date.now(), list };
+  return list;
+}
+
+async function loadBusinesses(): Promise<Business[]> {
   const saved = await getKV<Business[]>(KEY);
   if (saved && !(await getKV<boolean>(CLEANED))) {
     const next = saved.map((b) => ({
@@ -37,6 +48,7 @@ export async function getBusiness(id: string): Promise<Business | undefined> {
 
 export async function saveBusinesses(list: Business[]) {
   await setKV(KEY, list);
+  memo = { at: Date.now(), list };
 }
 
 export function slugify(name: string) {
