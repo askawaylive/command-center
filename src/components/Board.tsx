@@ -16,7 +16,7 @@ const COLUMNS: { id: TaskStatus; label: string }[] = [
   { id: "done", label: "Done" },
 ];
 
-export function Board({ initialTasks, businesses, fixedBusiness }: { initialTasks: Task[]; businesses: Business[]; fixedBusiness?: string }) {
+export function Board({ initialTasks, businesses, fixedBusiness, embedded }: { initialTasks: Task[]; businesses: Business[]; fixedBusiness?: string; embedded?: boolean }) {
   const { tasks, update, create, remove } = useTasks(initialTasks);
   const [biz, setBiz] = useState<string>(fixedBusiness ?? "all");
   // A business with a staged launch plan opens straight onto its launch pad.
@@ -43,8 +43,8 @@ export function Board({ initialTasks, businesses, fixedBusiness }: { initialTask
     `inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] border transition-colors ${active ? "bg-ink text-bg border-ink" : "border-line text-muted hover:text-ink"}`;
 
   return (
-    <div className={`px-8 pb-8 transition-[padding] ${selected ? "lg:pr-[372px]" : ""}`}>
-      <div className="mb-5 flex flex-wrap items-center gap-2">
+    <div className={embedded ? "@container" : `px-8 pb-8 transition-[padding] ${selected ? "lg:pr-[372px]" : ""}`}>
+      <div className={`flex flex-wrap items-center gap-2 ${embedded ? "mb-3 empty:hidden" : "mb-5"}`}>
         {!fixedBusiness && (
           <>
             <button className={chip(biz === "all")} onClick={() => { setBiz("all"); setLaunch("all"); }}>All businesses</button>
@@ -79,7 +79,7 @@ export function Board({ initialTasks, businesses, fixedBusiness }: { initialTask
       {showPad ? (
         <LaunchPad tasks={visible} all={tasks} byId={byId} selectedId={selectedId} onOpen={setSelectedId} onToggle={(t) => update(t.id, { status: t.status === "done" ? "todo" : "done" })} businesses={businesses} onCreate={create} />
       ) : (
-      <div className={`grid gap-4 md:grid-cols-2 ${selected ? "xl:grid-cols-[repeat(4,minmax(250px,1fr))] xl:overflow-x-auto xl:scroll-thin xl:pb-2" : "xl:grid-cols-4"}`}>
+      <div className={embedded ? "grid gap-3 @xl:grid-cols-2 @5xl:grid-cols-4" : `grid gap-4 md:grid-cols-2 ${selected ? "xl:grid-cols-[repeat(4,minmax(250px,1fr))] xl:overflow-x-auto xl:scroll-thin xl:pb-2" : "xl:grid-cols-4"}`}>
         {COLUMNS.map((c) => {
           const list = visible.filter((t) => t.status === c.id);
           return (

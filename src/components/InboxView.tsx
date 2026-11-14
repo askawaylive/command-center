@@ -4,7 +4,7 @@ import type { Business, Email } from "@/lib/types";
 import { Icon } from "./Icon";
 import { BizMark } from "./BizMark";
 
-export function InboxView({ emails, businesses, fixedBusiness }: { emails: Email[]; businesses: Business[]; fixedBusiness?: string }) {
+export function InboxView({ emails, businesses, fixedBusiness, embedded }: { emails: Email[]; businesses: Business[]; fixedBusiness?: string; embedded?: boolean }) {
   const [biz, setBiz] = useState(fixedBusiness ?? "all");
   const [planned, setPlanned] = useState<Set<string>>(new Set());
   const [replying, setReplying] = useState<string | null>(null);
@@ -22,7 +22,7 @@ export function InboxView({ emails, businesses, fixedBusiness }: { emails: Email
   };
 
   return (
-    <div className="px-8 pb-10">
+    <div className={embedded ? "" : "px-8 pb-10"}>
       {!fixedBusiness && (
         <div className="mb-5 flex flex-wrap gap-1 border-b border-line">
           {[{ id: "all", name: "All inboxes", color: "" }, ...businesses].map((b) => (
@@ -38,7 +38,7 @@ export function InboxView({ emails, businesses, fixedBusiness }: { emails: Email
           ))}
         </div>
       )}
-      <div className="card divide-y divide-[var(--border)] overflow-hidden">
+      <div className={`divide-y divide-[var(--border)] overflow-hidden ${embedded ? "" : "card"}`}>
         {list.length === 0 && <div className="p-6 text-muted">No emails here. If an inbox isn&apos;t connected yet, connect it on the <a href="/settings" className="underline">Connections</a> page.</div>}
         {list.map((e) => (
           <div key={e.id}>
