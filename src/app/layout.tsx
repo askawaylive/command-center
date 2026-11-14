@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { PixelClock } from "@/components/PixelClock";
 import { QuickChat } from "@/components/QuickChat";
 import { FreshPages } from "@/components/FreshAfterEdits";
+import { Toaster } from "@/components/Toast";
 import { getBusinesses } from "@/lib/businesses";
 
 const sans = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -37,6 +38,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </main>
           </div>
           <QuickChat />
+          <Toaster />
         </div>
       </body>
     </html>

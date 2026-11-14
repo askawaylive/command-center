@@ -40,6 +40,12 @@ export interface Task {
   /** Planned time in minutes (Sunsama-style timeboxing). */
   estimateMin?: number;
   launch?: string; // name of the launch/milestone this belongs to
+  /** Step of the launch this sits in (e.g. "Start now", "Build"); drives the launch pad columns. */
+  stage?: string;
+  /** Ids of tasks that must be done before this one can be completed. */
+  dependsOn?: string[];
+  /** Flag for tasks that cost money (shown in red). */
+  costs?: boolean;
   createdAt: string;
   completedAt?: string;
 }

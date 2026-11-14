@@ -8,6 +8,7 @@ import { useTasks, fmtMinutes } from "./useTasks";
 import { Icon } from "./Icon";
 import { BizMark } from "./BizMark";
 import { TaskDetails } from "./TaskDetails";
+import { depsOf } from "@/lib/deps";
 import { RichNote } from "./RichNote";
 import Link from "next/link";
 import { PhotoFrame, type Photo } from "./PhotoFrame";
@@ -207,7 +208,7 @@ export function Planner({
   const isToday = day === today;
   const toggle = (t: Task) => update(t.id, { status: t.status === "done" ? "todo" : "done" });
   const card = (t: Task) => (
-    <TaskCard key={t.id} task={t} business={byId[t.businessId]} onToggle={() => toggle(t)} onOpen={() => setSelectedId(t.id)} selected={t.id === selectedId} />
+    <TaskCard key={t.id} task={t} deps={depsOf(t, tasks)} business={byId[t.businessId]} onToggle={() => toggle(t)} onOpen={() => setSelectedId(t.id)} selected={t.id === selectedId} />
   );
 
   return (
@@ -381,6 +382,7 @@ export function Planner({
           <TaskDetails
             task={selected}
             businesses={businesses}
+            allTasks={tasks}
             onUpdate={(patch) => update(selected.id, patch)}
             onDelete={() => {
               remove(selected.id);

@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
-import { deleteTask, updateTask } from "@/lib/tasks";
+import { TaskRuleError, deleteTask, updateTask } from "@/lib/tasks";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const t = await updateTask(id, await req.json());
+  let t;
+  try {
+    t = await updateTask(id, await req.json());
+  } catch (e) {
+    if (e instanceof TaskRuleError) return NextResponse.json({ error: e.message }, { status: 409 });
+    throw e;
+  }
   return t ? NextResponse.json(t) : NextResponse.json({ error: "not found" }, { status: 404 });
 }
 

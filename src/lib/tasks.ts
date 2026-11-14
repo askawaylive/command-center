@@ -2,6 +2,11 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import type { Task } from "./types";
 import { deleteDoc, getKV, listDocs, putDocs, setKV } from "./store";
+import { openBlockers, wouldCycle } from "./deps";
+import { SITCOM_LAUNCH_PAD } from "./launchpads";
+
+/** A change the dependency rules don't allow (e.g. completing a task whose blockers are still open). */
+export class TaskRuleError extends Error {}
 
 const COLL = "tasks";
 
@@ -32,6 +37,13 @@ async function all(): Promise<Task[]> {
     existing = existing.filter((t) => !DEMO_TITLES.has(t.title));
     await setKV(CLEANED, true);
   }
+  if (!(await getKV<boolean>(SITCOM_LAUNCH_PAD.key))) {
+    const have = new Set(existing.map((t) => t.id));
+    const add = SITCOM_LAUNCH_PAD.tasks().filter((t) => !have.has(t.id));
+    if (add.length) await putDocs(COLL, add);
+    existing = [...existing, ...add];
+    await setKV(SITCOM_LAUNCH_PAD.key, true);
+  }
   return existing.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
@@ -53,8 +65,19 @@ export async function createTask(input: Partial<Task> & Pick<Task, "title" | "bu
 }
 
 export async function updateTask(id: string, patch: Partial<Task>): Promise<Task | undefined> {
-  const t = (await all()).find((x) => x.id === id);
+  const tasks = await all();
+  const t = tasks.find((x) => x.id === id);
   if (!t) return undefined;
+  if (patch.dependsOn) {
+    const ids = [...new Set(patch.dependsOn)].filter((d) => tasks.some((x) => x.id === d));
+    const loop = ids.find((d) => wouldCycle(id, d, tasks));
+    if (loop) throw new TaskRuleError(`That would make a loop: "${tasks.find((x) => x.id === loop)?.title}" already waits on this task.`);
+    patch.dependsOn = ids;
+  }
+  if (patch.status === "done" && t.status !== "done") {
+    const open = openBlockers({ ...t, ...patch }, tasks);
+    if (open.length) throw new TaskRuleError(`Finish ${open.map((b) => `"${b.title}"`).join(", ")} first.`);
+  }
   Object.assign(t, patch, { id });
   if (patch.status === "done" && !t.completedAt) t.completedAt = new Date().toISOString();
   if (patch.status && patch.status !== "done") delete t.completedAt;
@@ -64,4 +87,8 @@ export async function updateTask(id: string, patch: Partial<Task>): Promise<Task
 
 export async function deleteTask(id: string) {
   await deleteDoc(COLL, id);
+  // Nothing should keep waiting on a task that no longer exists.
+  const waiting = (await all()).filter((t) => t.dependsOn?.includes(id));
+  for (const t of waiting) t.dependsOn = t.dependsOn!.filter((d) => d !== id);
+  if (waiting.length) await putDocs(COLL, waiting);
 }

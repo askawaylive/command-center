@@ -4,7 +4,7 @@ import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { getBusinesses } from "./businesses";
 import { getAllMetrics, getBankAccounts, getEmails, getMetrics } from "./data";
-import { createTask, listTasks, updateTask } from "./tasks";
+import { TaskRuleError, createTask, listTasks, updateTask } from "./tasks";
 import { isoDay } from "./dates";
 
 const MODEL = "claude-opus-5-5";
@@ -110,11 +110,17 @@ function buildTools(ids: string[], onChange: () => void) {
         priority: z.enum(["low", "medium", "high"]).optional(),
       }),
       run: async ({ id, status, planned_for, priority }) => {
-        const t = await updateTask(id, {
-          ...(status && { status }),
-          ...(planned_for && { plannedFor: planned_for }),
-          ...(priority && { priority }),
-        });
+        let t;
+        try {
+          t = await updateTask(id, {
+            ...(status && { status }),
+            ...(planned_for && { plannedFor: planned_for }),
+            ...(priority && { priority }),
+          });
+        } catch (e) {
+          if (e instanceof TaskRuleError) return `Not changed: ${e.message}`;
+          throw e;
+        }
         if (t) onChange();
         return t ? JSON.stringify(t) : `No task with id ${id}`;
       },
