@@ -27,7 +27,7 @@ export function QuickChat() {
   return (
     <>
       {open && (
-        <div className="fixed bottom-24 right-4 z-40 flex h-[min(600px,calc(100vh-8rem))] w-[min(420px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-line bg-bg shadow-[0_12px_48px_rgba(0,0,0,0.18)]">
+        <div className="fixed inset-x-2 bottom-[calc(72px+env(safe-area-inset-bottom))] top-14 z-40 flex md:inset-x-auto md:top-auto md:bottom-24 md:right-4 md:h-[min(600px,calc(100vh-8rem))] md:w-[420px] flex-col overflow-hidden rounded-2xl border border-line bg-bg shadow-[0_12px_48px_rgba(0,0,0,0.18)]">
           <div className="flex items-center gap-2 border-b border-line px-4 py-3">
             <span className="text-accent"><Icon name="spark" size={16} /></span>
             <span className="font-serif text-[17px]">Ask Claude</span>
@@ -43,10 +43,10 @@ export function QuickChat() {
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? "Close Ask Claude" : "Ask Claude"}
         title="Ask Claude (⌘K)"
-        className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-accent px-4 py-3 text-[14px] font-medium text-white shadow-[0_6px_24px_rgba(201,100,66,0.45)] transition-transform hover:scale-[1.03] hover:bg-accent-hover"
+        className={`fixed bottom-[calc(72px+env(safe-area-inset-bottom))] right-4 z-40 items-center ${open ? "hidden md:flex" : "flex"} gap-2 rounded-full bg-accent p-3 text-[14px] md:bottom-5 md:right-5 md:px-4 font-medium text-white shadow-[0_6px_24px_rgba(201,100,66,0.45)] transition-transform hover:scale-[1.03] hover:bg-accent-hover`}
       >
         <Icon name="spark" size={17} />
-        {open ? "Close" : "Ask Claude"}
+        <span className="hidden md:inline">{open ? "Close" : "Ask Claude"}</span>
       </button>
     </>
   );

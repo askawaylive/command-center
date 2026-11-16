@@ -32,9 +32,9 @@ export function Stat({ label, value, sub }: { label: string; value: string; sub?
 
 export function PageHeader({ title, subtitle, children }: { title: string; subtitle?: string; children?: React.ReactNode }) {
   return (
-    <header className="flex flex-wrap items-end justify-between gap-3 px-8 pt-8 pb-6">
+    <header className="flex flex-wrap items-end justify-between gap-3 px-4 md:px-8 pt-8 pb-6">
       <div>
-        <h1 className="font-serif text-[32px] leading-tight tracking-tight">{title}</h1>
+        <h1 className="font-serif text-[26px] md:text-[32px] leading-tight tracking-tight">{title}</h1>
         {subtitle && <p className="mt-1 text-[15px] text-muted">{subtitle}</p>}
       </div>
       {children}

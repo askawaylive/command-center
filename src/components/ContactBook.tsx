@@ -186,10 +186,10 @@ export function ContactBook({ initial, businesses }: { initial: Contact[]; busin
 
   return (
     <div className="flex h-full">
-      <div className="min-w-0 flex-1 overflow-y-auto scroll-thin px-8 pt-8 pb-10">
+      <div className="min-w-0 flex-1 overflow-y-auto scroll-thin px-4 md:px-8 pt-8 pb-10">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-[32px] leading-tight">Contacts</h1>
+            <h1 className="text-[26px] md:text-[32px] leading-tight">Contacts</h1>
             <p className="mt-1 text-[15px] text-muted">Everyone you work with, by business.</p>
           </div>
           <button className="btn btn-primary" onClick={() => setDraft({ isNew: true, name: "", businessId: biz !== "all" && biz !== "none" ? biz : undefined })}>

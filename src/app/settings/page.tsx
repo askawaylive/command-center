@@ -19,7 +19,7 @@ export default async function SettingsPage() {
   return (
     <div className="pb-10">
       <PageHeader title="Connections" subtitle="Add keys on Render’s Environment page. Anything not connected shows as zero until it is." />
-      <div className="px-8">
+      <div className="px-4 md:px-8">
         <div className="card divide-y divide-[var(--border)]">
           {status.map((s) => (
             <div key={s.name} className="flex items-start gap-4 px-5 py-3.5">

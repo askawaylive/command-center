@@ -561,12 +561,12 @@ export function MailClient({ businesses }: { businesses: Business[] }) {
         />
       )}
       {!compose && (
-        <button onClick={() => setCompose(newDraft())} className="btn btn-primary fixed bottom-24 right-5 z-30 shadow-lg md:hidden" aria-label="Compose">
+        <button onClick={() => setCompose(newDraft())} className="btn btn-primary fixed bottom-[calc(72px+env(safe-area-inset-bottom))] left-4 z-30 shadow-lg md:hidden" aria-label="Compose">
           <Icon name="pencil" size={15} /> Compose
         </button>
       )}
       {toast && (
-        <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-ink px-4 py-2 text-[14px] text-bg shadow-lg">{toast}</div>
+        <div className="pointer-events-none fixed bottom-[calc(130px+env(safe-area-inset-bottom))] md:bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-ink px-4 py-2 text-[14px] text-bg shadow-lg">{toast}</div>
       )}
     </div>
   );

@@ -146,6 +146,8 @@ export function Planner({
     }, 400);
   };
   const isDefault = JSON.stringify(layouts) === JSON.stringify(DEFAULT_LAYOUTS);
+  // Phones scroll with a finger, so sections don't move or resize there.
+  const [bp, setBp] = useState("lg");
   const { tasks, update, create, remove } = useTasks(initialTasks);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [today, setToday] = useState(() => isoDay());
@@ -214,7 +216,7 @@ export function Planner({
   return (
     <div className="flex h-full">
       <div className="min-w-0 flex-1 overflow-y-auto scroll-thin">
-        <header className="px-8 pt-8 pb-6">
+        <header className="px-4 md:px-8 pt-8 pb-6">
           <div className="flex items-center gap-1 text-[13px] text-muted">
             <button onClick={() => setDay(addDays(day, -1))} aria-label="Previous day" className="rounded-md p-1 hover:bg-sidebar hover:text-ink">
               <Icon name="chevronLeft" size={15} />
@@ -229,7 +231,7 @@ export function Planner({
               </button>
             )}
           </div>
-          <h1 className="mt-2 text-[32px] leading-tight">
+          <h1 className="mt-2 text-[26px] md:text-[32px] leading-tight">
             {isToday ? `${greeting()}${name ? `, ${name}` : ""}` : fmtDay(day, { weekday: "long" })}
           </h1>
           <p className="mt-1 text-[15px] text-muted">
@@ -251,7 +253,7 @@ export function Planner({
           )}
         </header>
 
-        <div className="px-6 pb-10">
+        <div className="px-2 pb-10 md:px-6">
           <div className="flex justify-end gap-3 px-2 text-[12px] text-faint">
             <span className="hidden lg:inline">Drag a section by its title, resize from its edges.</span>
             {!isDefault && (
@@ -273,6 +275,9 @@ export function Planner({
             rowHeight={40}
             margin={[16, 16]}
             containerPadding={[8, 8]}
+            onBreakpointChange={setBp}
+            isDraggable={bp === "lg"}
+            isResizable={bp === "lg"}
             draggableHandle=".widget-handle"
             resizeHandles={["se", "e", "s"]}
             onLayoutChange={(_cur, all) => setLayouts(normalize(all))}
@@ -391,7 +396,7 @@ export function Planner({
             onClose={() => setSelectedId(null)}
           />
         ) : (
-          <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center px-4 md:px-8 text-center">
             <span className="text-faint"><Icon name="board" size={26} /></span>
             <p className="mt-3 text-[14px] text-muted">Click a task to see its details here.</p>
           </div>

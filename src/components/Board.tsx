@@ -43,7 +43,7 @@ export function Board({ initialTasks, businesses, fixedBusiness, embedded }: { i
     `inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] border transition-colors ${active ? "bg-ink text-bg border-ink" : "border-line text-muted hover:text-ink"}`;
 
   return (
-    <div className={embedded ? "@container" : `px-8 pb-8 transition-[padding] ${selected ? "lg:pr-[372px]" : ""}`}>
+    <div className={embedded ? "@container" : `px-4 md:px-8 pb-8 transition-[padding] ${selected ? "lg:pr-[372px]" : ""}`}>
       <div className={`flex flex-wrap items-center gap-2 ${embedded ? "mb-3 empty:hidden" : "mb-5"}`}>
         {!fixedBusiness && (
           <>
@@ -148,13 +148,13 @@ function LaunchProgress({ tasks, name, children }: { tasks: Task[]; name: string
   const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
   const due = tasks.map((t) => t.dueDate).filter(Boolean).sort().at(-1);
   return (
-    <div className="card mb-5 flex items-center gap-4 p-4">
+    <div className="card mb-5 flex flex-wrap items-center gap-x-4 gap-y-3 p-4">
       <div className="flex-1">
         <div className="text-[13px] text-muted">Launch</div>
         <div className="font-serif text-[20px]">{name}</div>
       </div>
       {children}
-      <div className="w-1/2">
+      <div className="w-full md:w-1/2">
         <div className="mb-1 flex justify-between text-[12px] text-muted">
           <span>{done} of {tasks.length} tasks done{due ? ` · last due ${due}` : ""}</span>
           <span className="tabular-nums">{pct}%</span>

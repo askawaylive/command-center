@@ -145,8 +145,8 @@ export function NotesArchive({ initial, businesses }: { initial: DayNote[]; busi
 
   return (
     <div className="flex h-full">
-      <div className="min-w-0 flex-1 overflow-y-auto scroll-thin px-8 pt-8 pb-10">
-        <h1 className="text-[32px] leading-tight">Notes</h1>
+      <div className="min-w-0 flex-1 overflow-y-auto scroll-thin px-4 md:px-8 pt-8 pb-10">
+        <h1 className="text-[26px] md:text-[32px] leading-tight">Notes</h1>
         <p className="mt-1 text-[15px] text-muted">Each day&apos;s notes from Today are filed here after midnight.</p>
 
         <div className="mt-6 flex flex-wrap items-center gap-2">

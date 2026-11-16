@@ -69,7 +69,7 @@ export function BusinessManager({ initial }: { initial: Business[] }) {
   };
 
   return (
-    <div className="px-8 pb-10">
+    <div className="px-4 md:px-8 pb-10">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {list.map((b) => (
           <button key={b.id} onClick={() => { setError(null); setDraft({ ...b, sources: { ...b.sources } }); }} className="card group p-5 text-left transition-shadow hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)]">

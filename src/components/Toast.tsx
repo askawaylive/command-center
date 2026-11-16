@@ -20,7 +20,7 @@ export function Toaster() {
   }, []);
   if (!msg) return null;
   return (
-    <div role="status" className="fixed bottom-6 left-1/2 z-[60] max-w-[90vw] -translate-x-1/2 rounded-xl bg-ink px-4 py-2.5 text-[13px] text-bg shadow-xl">
+    <div role="status" className="fixed bottom-[calc(130px+env(safe-area-inset-bottom))] md:bottom-6 left-1/2 z-[60] max-w-[90vw] -translate-x-1/2 rounded-xl bg-ink px-4 py-2.5 text-[13px] text-bg shadow-xl">
       {msg}
     </div>
   );

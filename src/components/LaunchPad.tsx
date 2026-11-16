@@ -37,7 +37,7 @@ export function LaunchPad({
 
   return (
     <div>
-      <div className="flex gap-3 overflow-x-auto scroll-thin pb-3">
+      <div className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto scroll-thin px-4 pb-3 md:mx-0 md:snap-none md:px-0">
         {columns.map((c, i) => {
           const done = c.list.filter((t) => t.status === "done").length;
           // Ready first, then waiting, then done.
@@ -46,11 +46,11 @@ export function LaunchPad({
           return (
             <Fragment key={c.name}>
               {i > 0 && (
-                <div className="flex shrink-0 items-start pt-24 text-faint" aria-hidden>
+                <div className="hidden shrink-0 items-start pt-24 text-faint md:flex" aria-hidden>
                   <Icon name="arrowRight" size={18} />
                 </div>
               )}
-              <section className="w-[270px] shrink-0 rounded-2xl bg-sidebar/60 p-3">
+              <section className="w-[85vw] max-w-[320px] shrink-0 snap-start rounded-2xl bg-sidebar/60 p-3 md:w-[270px]">
                 <div className="mb-3 flex items-baseline justify-between px-1">
                   <h2 className="text-[15px] font-semibold text-accent">
                     {c.name === "No stage" ? c.name : `${stages.indexOf(c.name) + 1} · ${c.name}`}

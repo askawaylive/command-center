@@ -60,7 +60,7 @@ export default async function BusinessPage({ params, searchParams }: { params: P
   const openCount = tasks.filter((t) => t.status !== "done").length;
 
   const header = (
-    <div className="px-6 pt-6 lg:px-8">
+    <div className="px-4 pt-4 md:px-6 md:pt-6 lg:px-8">
       <header className="flex items-center gap-3">
         <BizMark business={b} size={40} />
         <div className="min-w-0">
@@ -109,7 +109,7 @@ export default async function BusinessPage({ params, searchParams }: { params: P
     return (
       <div className="pb-10">
         {header}
-        <div className="px-6 pt-5 lg:px-8"><CommissionTracker business={b} initial={jobs} paintscout={psStatus} /></div>
+        <div className="px-4 pt-5 md:px-6 lg:px-8"><CommissionTracker business={b} initial={jobs} paintscout={psStatus} /></div>
       </div>
     );
   }
@@ -141,7 +141,7 @@ export default async function BusinessPage({ params, searchParams }: { params: P
           ];
 
   const widgets: Widget[] = [
-        ...tiles.map(([key, node], i): Widget => ({ id: `kpi-${key}`, bare: true, at: { x: i * 3, y: 0, w: 3, h: 2, minW: 2, minH: 2 }, smH: 2, children: node })),
+        ...tiles.map(([key, node], i): Widget => ({ id: `kpi-${key}`, bare: true, at: { x: i * 3, y: 0, w: 3, h: 2, minW: 2, minH: 2 }, smH: 3, half: true, children: node })),
         {
           id: "chart",
           title: type === "ecommerce" ? "Total sales over time" : "Revenue over time",
@@ -191,7 +191,7 @@ export default async function BusinessPage({ params, searchParams }: { params: P
   return (
     <div className="pb-10">
       {header}
-      <div className="px-6 pt-3 lg:px-8">
+      <div className="px-4 pt-3 md:px-6 lg:px-8">
         {b.description && <p className="mb-1 max-w-3xl text-[13px] leading-relaxed text-muted line-clamp-2">{b.description}</p>}
         <WidgetGrid widgets={widgets} prefKey={`layout:biz:${id}`} saved={saved} />
       </div>

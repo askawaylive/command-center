@@ -24,7 +24,7 @@ export default async function Dashboard() {
           <RefreshButton />
         </div>
       </PageHeader>
-      <div className="px-8 space-y-6">
+      <div className="px-4 md:px-8 space-y-6">
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
           <Stat label="Revenue · 30 days" value={money(revenue)} sub={<><Delta now={revenue} prev={prev} /> vs previous 30 days</>} />
           <Stat label="Recurring (MRR)" value={money(sum((m) => m.mrr))} sub="From active Stripe subscriptions" />

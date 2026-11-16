@@ -6,7 +6,7 @@ import "react-resizable/css/styles.css";
 
 const Grid = WidthProvider(Responsive);
 const BREAKPOINTS = { lg: 680, sm: 0 };
-const COLS = { lg: 12, sm: 1 };
+const COLS = { lg: 12, sm: 2 };
 const ROW = 40;
 
 export interface Widget {
@@ -16,8 +16,10 @@ export interface Widget {
   extra?: React.ReactNode;
   /** Position on the 12-column grid. */
   at: { x: number; y: number; w: number; h: number; minW?: number; minH?: number };
-  /** Height on phones (one column). */
+  /** Height on phones. */
   smH?: number;
+  /** Half width on phones (two small cards side by side). */
+  half?: boolean;
   /** Cards like stat tiles draw their own label and keep tight padding. */
   bare?: boolean;
   children: React.ReactNode;
@@ -27,14 +29,29 @@ function defaults(widgets: Widget[]): Layouts {
   let y = 0;
   return {
     lg: widgets.map((w) => ({ i: w.id, ...w.at, minW: w.at.minW ?? 2, minH: w.at.minH ?? 2 })),
-    sm: [...widgets]
-      .sort((a, b) => a.at.y - b.at.y || a.at.x - b.at.x)
-      .map((w) => {
-        const h = w.smH ?? w.at.h;
-        const l: Layout = { i: w.id, x: 0, y, w: 1, h, minH: 2 };
-        y += h;
-        return l;
-      }),
+    sm: (() => {
+      // Phones: two columns. Half-width cards pair up side by side; everything else spans both.
+      let col = 0;
+      let rowH = 0;
+      return [...widgets]
+        .sort((a, b) => a.at.y - b.at.y || a.at.x - b.at.x)
+        .map((w) => {
+          const h = w.smH ?? w.at.h;
+          if (col === 1 && !w.half) {
+            y += rowH;
+            col = 0;
+          }
+          const l: Layout = { i: w.id, x: w.half ? col : 0, y, w: w.half ? 1 : 2, h, minH: 2 };
+          if (w.half && col === 0) {
+            col = 1;
+            rowH = h;
+          } else {
+            y += Math.max(h, w.half ? rowH : 0);
+            col = 0;
+          }
+          return l;
+        });
+    })(),
   };
 }
 
@@ -42,7 +59,8 @@ function defaults(widgets: Widget[]): Layouts {
 function normalize(saved: Layouts | null | undefined, defs: Layouts): Layouts {
   const out: Layouts = {};
   for (const bp of Object.keys(defs)) {
-    const mine = saved && Array.isArray(saved[bp]) ? saved[bp] : [];
+    // Phone layouts can't be edited, so they always follow the desktop order.
+    const mine = bp !== "sm" && saved && Array.isArray(saved[bp]) ? saved[bp] : [];
     out[bp] = defs[bp].map((d) => {
       const m = mine.find((l) => l.i === d.i);
       return m ? { ...d, x: m.x, y: m.y, w: m.w, h: m.h } : d;
@@ -58,6 +76,8 @@ function normalize(saved: Layouts | null | undefined, defs: Layouts): Layouts {
 export function WidgetGrid({ widgets, prefKey, saved }: { widgets: Widget[]; prefKey: string; saved?: Layouts | null }) {
   const defs = defaults(widgets);
   const [layouts, setLayouts] = useState<Layouts>(() => normalize(saved, defs));
+  // Phones scroll the page with a finger, so cards don't move or resize there.
+  const [bp, setBp] = useState("lg");
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const persist = (next: Layouts) => {
     clearTimeout(timer.current);
@@ -85,6 +105,9 @@ export function WidgetGrid({ widgets, prefKey, saved }: { widgets: Widget[]; pre
         rowHeight={ROW}
         margin={[12, 12]}
         containerPadding={[0, 8]}
+        onBreakpointChange={setBp}
+        isDraggable={bp === "lg"}
+        isResizable={bp === "lg"}
         draggableHandle=".widget-handle"
         draggableCancel="button, a, input, select, textarea, [contenteditable]"
         resizeHandles={["se", "e", "s"]}
@@ -95,10 +118,10 @@ export function WidgetGrid({ widgets, prefKey, saved }: { widgets: Widget[]; pre
         {widgets.map((w) => (
           <div key={w.id} className={`card flex flex-col overflow-hidden ${w.bare ? "" : "p-4"}`}>
             {w.bare ? (
-              <div className="widget-handle h-full cursor-move">{w.children}</div>
+              <div className={`widget-handle h-full ${bp === "lg" ? "cursor-move" : ""}`}>{w.children}</div>
             ) : (
               <>
-                <div className="widget-handle mb-2 flex cursor-move select-none items-center gap-2">
+                <div className={`widget-handle mb-2 flex select-none items-center gap-2 ${bp === "lg" ? "cursor-move" : ""}`}>
                   <h2 className="min-w-0 flex-1 truncate text-[14px] font-semibold">{w.title}</h2>
                   {w.extra}
                 </div>

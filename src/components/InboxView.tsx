@@ -22,7 +22,7 @@ export function InboxView({ emails, businesses, fixedBusiness, embedded }: { ema
   };
 
   return (
-    <div className={embedded ? "" : "px-8 pb-10"}>
+    <div className={embedded ? "" : "px-4 md:px-8 pb-10"}>
       {!fixedBusiness && (
         <div className="mb-5 flex flex-wrap gap-1 border-b border-line">
           {[{ id: "all", name: "All inboxes", color: "" }, ...businesses].map((b) => (
