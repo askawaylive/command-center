@@ -43,7 +43,7 @@ function Row({ label, value, strong }: { label: string; value: React.ReactNode; 
   );
 }
 
-const TABS = ["analytics", "jobs", "tasks", "inbox"] as const;
+const TABS = ["analytics", "tasks", "inbox"] as const;
 type Tab = (typeof TABS)[number];
 
 export default async function BusinessPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
@@ -74,14 +74,14 @@ export default async function BusinessPage({ params, searchParams }: { params: P
         <Link href="/businesses" className="btn btn-ghost ml-auto border border-line">Edit</Link>
       </header>
       <nav className="mt-4 flex gap-1 border-b border-line" aria-label={`${b.name} sections`}>
-        {TABS.filter((t) => t !== "jobs" || commission).map((t) => (
+        {TABS.map((t) => (
           <Link
             key={t}
             href={t === "analytics" ? `/business/${id}` : `/business/${id}?tab=${t}`}
             aria-current={tab === t ? "page" : undefined}
             className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-[14px] ${tab === t ? "border-accent font-medium text-ink" : "border-transparent text-muted hover:text-ink"}`}
           >
-            {t === "analytics" ? "Analytics" : t === "jobs" ? "Jobs" : t === "tasks" ? "Tasks" : "Inbox"}
+            {t === "analytics" ? "Analytics" : t === "tasks" ? "Tasks" : "Inbox"}
             {t === "tasks" && openCount > 0 && <span className="text-[12px] text-faint tabular-nums">{openCount}</span>}
           </Link>
         ))}
@@ -105,12 +105,11 @@ export default async function BusinessPage({ params, searchParams }: { params: P
     );
   if (commission) {
     const [psStatus, jobs, saved] = await Promise.all([syncPaintscout(id), listJobs(id), getKV<Layouts>(`pref:layout:biz:${id}`)]);
-    const view = tab === "jobs" ? "jobs" : "analytics";
     return (
       <div className="pb-10">
         {header}
-        <div className={`px-4 md:px-6 lg:px-8 ${view === "jobs" ? "pt-5" : "pt-3"}`}>
-          <CommissionTracker key={view} business={b} initial={jobs} paintscout={psStatus} view={view} savedLayout={saved} />
+        <div className="px-4 pt-3 md:px-6 lg:px-8">
+          <CommissionTracker business={b} initial={jobs} paintscout={psStatus} view="analytics" savedLayout={saved} />
         </div>
       </div>
     );

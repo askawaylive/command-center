@@ -273,7 +273,7 @@ export function CommissionTracker({
   business: Business;
   initial: Job[];
   paintscout?: PSStatus | null;
-  /** "analytics": the rearrangeable dashboard of numbers and charts. "jobs": the job list. */
+  /** "analytics": the rearrangeable dashboard of numbers and charts, with the job list below. "jobs": only the job list. */
   view?: "analytics" | "jobs";
   savedLayout?: Layouts | null;
 }) {
@@ -425,11 +425,12 @@ export function CommissionTracker({
     ) },
   ];
 
-  if (view === "analytics") return <WidgetGrid widgets={widgets} prefKey={`layout:biz:${business.id}`} saved={savedLayout} />;
+  const grid = view === "analytics" ? <WidgetGrid widgets={widgets} prefKey={`layout:biz:${business.id}`} saved={savedLayout} /> : null;
 
   return (
     <div className="flex">
       <div className={`min-w-0 flex-1 space-y-6 transition-[padding] ${selected ? "lg:pr-[372px]" : ""}`}>
+        {grid}
         <PaintScoutBar status={ps} syncing={syncing} onSync={sync} />
         <section>
           <div className="mb-3 flex flex-wrap items-center gap-2">
