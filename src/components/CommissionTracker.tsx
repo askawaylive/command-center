@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import type { Business, Job, JobStatus } from "@/lib/types";
 import { addDays, isoDay } from "@/lib/dates";
 import { MultiLineChart, type MultiPoint } from "./charts";
+import { WidgetGrid, type Widget } from "./WidgetGrid";
+import type { Layouts } from "react-grid-layout";
 import {
   annualBonus,
   commissionSettings,
@@ -45,7 +47,7 @@ const FILTERS: { id: "open" | JobStatus | "all"; label: string }[] = [
 
 function Tile({ label, value, sub, children }: { label: string; value: string; sub?: React.ReactNode; children?: React.ReactNode }) {
   return (
-    <div className="card p-4">
+    <div className="h-full p-4">
       <div className="text-[12px] text-muted">{label}</div>
       <div className="mt-1 text-[26px] font-semibold leading-none tabular-nums">{value}</div>
       {children}
@@ -208,7 +210,7 @@ function EstimatesChart({ jobs, today }: { jobs: Job[]; today: string }) {
   }, [jobs, today, range]);
 
   return (
-    <section className="card flex h-[360px] flex-col p-5">
+    <section className="flex h-full flex-col p-4">
       <div className="mb-2 flex flex-wrap items-center gap-3">
         <div>
           <h2 className="text-[17px]">Estimates vs sold</h2>
@@ -287,7 +289,20 @@ function PaintScoutBar({ status, syncing, onSync }: { status: PSStatus | null; s
   );
 }
 
-export function CommissionTracker({ business, initial, paintscout }: { business: Business; initial: Job[]; paintscout?: PSStatus | null }) {
+export function CommissionTracker({
+  business,
+  initial,
+  paintscout,
+  view = "jobs",
+  savedLayout,
+}: {
+  business: Business;
+  initial: Job[];
+  paintscout?: PSStatus | null;
+  /** "analytics": the rearrangeable dashboard of numbers and charts. "jobs": the job list. */
+  view?: "analytics" | "jobs";
+  savedLayout?: Layouts | null;
+}) {
   const [ps, setPs] = useState<PSStatus | null>(paintscout ?? null);
   const [syncing, setSyncing] = useState(false);
   const sync = async (ownerId?: string) => {
@@ -357,11 +372,8 @@ export function CommissionTracker({ business, initial, paintscout }: { business:
     setAdding(false);
   };
 
-  return (
-    <div className="flex">
-      <div className={`min-w-0 flex-1 space-y-6 transition-[padding] ${selected ? "lg:pr-[372px]" : ""}`}>
-        <PaintScoutBar status={ps} syncing={syncing} onSync={sync} />
-        <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
+  const widgets: Widget[] = [
+    { id: "payday", bare: true, half: true, smH: 4, at: { x: 0, y: 0, w: 3, h: 3, minW: 2, minH: 2 }, children: (
           <Tile
             label={`Payday · early ${monthLabel(nextMonth(thisMonth), { month: "long" })}`}
             value={money((nextPay?.commission ?? 0) + (nextPay?.bonus ?? 0))}
@@ -371,24 +383,30 @@ export function CommissionTracker({ business, initial, paintscout }: { business:
                 : `Jobs completed in ${monthLabel(thisMonth, { month: "long" })} pay out then`
             }
           />
+    ) },
+    { id: "soldmonth", bare: true, half: true, smH: 4, at: { x: 3, y: 0, w: 3, h: 3, minW: 2, minH: 2 }, children: (
           <Tile label={`Sold in ${monthLabel(thisMonth, { month: "long" })}`} value={money(month.volume)} sub={bonus ? `${money(bonus)} bonus earned · ${money(nextTier - month.volume)} to the next $500` : month.volume && month.margin < 0.45 && month.volume >= 100_000 ? `Margin ${pct(month.margin)}: needs 45% for the bonus` : `${money(nextTier - month.volume)} more for a ${money(monthlyBonus(nextTier, 1))} bonus`}>
             <Bar value={month.volume} max={nextTier} ok={!month.volume || month.margin >= 0.45} />
           </Tile>
+    ) },
+    { id: "open", bare: true, half: true, smH: 4, at: { x: 6, y: 0, w: 2, h: 3, minW: 2, minH: 2 }, children: (
           <Tile
             label="Open estimates"
             value={money(sentOpen.reduce((t, j) => t + j.amount, 0))}
             sub={`${sentOpen.length} not sold yet · about ${money(sentOpen.reduce((t, j) => t + jobCommission(j, s), 0))} commission if they all close`}
           />
+    ) },
+    { id: "pipeline", bare: true, half: true, smH: 4, at: { x: 8, y: 0, w: 2, h: 3, minW: 2, minH: 2 }, children: (
           <Tile label="Sold, not finished" value={money(pipelineComm)} sub={`Commission waiting on ${pipeline.length} job${pipeline.length === 1 ? "" : "s"} (${money(pipeline.reduce((t, j) => t + j.amount, 0))})`} />
+    ) },
+    { id: "winrate", bare: true, half: true, smH: 4, at: { x: 10, y: 0, w: 2, h: 3, minW: 2, minH: 2 }, children: (
           <Tile label="Win rate · 90 days" value={wr.rate === null ? "–" : pct(wr.rate)} sub={wr.rate === null ? "No estimates in the last 90 days" : `${wr.won} of ${wr.issued} estimates accepted · minimum 40%`}>
             {wr.rate !== null && <Bar value={wr.rate} max={1} ok={wr.rate >= 0.4} />}
           </Tile>
-        </div>
-
-        <EstimatesChart jobs={jobs} today={today} />
-
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,340px)]">
-          <section className="card p-5">
+    ) },
+    { id: "estimates", bare: true, at: { x: 0, y: 3, w: 12, h: 8, minW: 4, minH: 5 }, smH: 8, children: <EstimatesChart jobs={jobs} today={today} /> },
+    { id: "payouts", bare: true, at: { x: 0, y: 11, w: 8, h: 7, minW: 3, minH: 3 }, smH: 7, children: (
+          <section className="h-full overflow-auto p-4">
             <h2 className="text-[17px]">Payout schedule</h2>
             <p className="mt-0.5 text-[13px] text-muted">Commission lands the month after a job is completed. Bonuses land the month after the sale month.</p>
             <div className="mt-4 divide-y divide-line">
@@ -414,7 +432,9 @@ export function CommissionTracker({ business, initial, paintscout }: { business:
               )}
             </div>
           </section>
-          <section className="card p-5">
+    ) },
+    { id: "production", bare: true, at: { x: 8, y: 11, w: 4, h: 7, minW: 3, minH: 3 }, smH: 7, children: (
+          <section className="h-full overflow-auto p-4">
             <h2 className="text-[17px]">{today.slice(0, 4)} production</h2>
             <div className="mt-2 text-[26px] font-semibold tabular-nums">{money(year)}</div>
             <div className="text-[13px] text-muted">sold this year · annual bonus {annualBonus(year) ? money(annualBonus(year)) : "not reached yet"}</div>
@@ -428,8 +448,15 @@ export function CommissionTracker({ business, initial, paintscout }: { business:
               {sentOpen.length} estimate{sentOpen.length === 1 ? "" : "s"} out worth {money(sentOpen.reduce((t, j) => t + j.amount, 0))}. If they all close: about {money(sentOpen.reduce((t, j) => t + jobCommission(j, s), 0))} commission.
             </div>
           </section>
-        </div>
+    ) },
+  ];
 
+  if (view === "analytics") return <WidgetGrid widgets={widgets} prefKey={`layout:biz:${business.id}`} saved={savedLayout} />;
+
+  return (
+    <div className="flex">
+      <div className={`min-w-0 flex-1 space-y-6 transition-[padding] ${selected ? "lg:pr-[372px]" : ""}`}>
+        <PaintScoutBar status={ps} syncing={syncing} onSync={sync} />
         <section>
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <h2 className="mr-2 text-[20px]">Jobs</h2>
