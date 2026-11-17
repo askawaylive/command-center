@@ -131,7 +131,11 @@ export interface Job {
   status: JobStatus;
   sentDate: string; // YYYY-MM-DD proposal issued
   soldDate?: string; // accepted + deposit
+  /** Expected start (set automatically to 2 weeks after the sale unless changed by hand). */
+  startDate?: string;
   scheduledDate?: string; // expected completion
+  /** True while start/finish are the automatic guess from the sold date; editing either by hand turns it off. */
+  scheduleAuto?: boolean;
   completedDate?: string;
   notes?: string;
   createdAt: string;

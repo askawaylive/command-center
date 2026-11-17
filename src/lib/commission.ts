@@ -129,3 +129,17 @@ export function payouts(jobs: Job[], s: { rate: number; costPct: number }) {
   }
   return { list: [...map.values()].sort((a, b) => a.month.localeCompare(b.month)), unscheduled };
 }
+
+/** Jobs usually start 2 weeks after they're sold and take 5–7 days; plan on the full week. */
+export const START_AFTER_DAYS = 14;
+export const JOB_LENGTH_DAYS = 7;
+const addDaysIso = (iso: string, n: number) => {
+  const d = new Date(iso + "T12:00:00Z");
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+/** Expected start and finish for a job sold on `soldDate`. */
+export function autoSchedule(soldDate: string) {
+  const startDate = addDaysIso(soldDate, START_AFTER_DAYS);
+  return { startDate, scheduledDate: addDaysIso(startDate, JOB_LENGTH_DAYS), scheduleAuto: true };
+}

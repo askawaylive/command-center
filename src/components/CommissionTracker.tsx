@@ -141,7 +141,11 @@ function JobEditor({
           <label className={row}><span className="text-muted">Price ($)</span><input className="input !py-1.5" min={0} step={50} {...num("amount")} /></label>
           <label className={row}><span className="text-muted">Estimate sent</span><input type="date" className="input !py-1.5" value={d.sentDate} onChange={(e) => commit({ sentDate: e.target.value || today })} /></label>
           <label className={row}><span className="text-muted">Sold</span><input type="date" className="input !py-1.5" value={d.soldDate ?? ""} onChange={(e) => commit({ soldDate: e.target.value || undefined })} /></label>
-          <label className={row}><span className="text-muted">Scheduled finish</span><input type="date" className="input !py-1.5" value={d.scheduledDate ?? ""} onChange={(e) => commit({ scheduledDate: e.target.value || undefined })} /></label>
+          <label className={row}><span className="text-muted">Expected start</span><input type="date" className="input !py-1.5" value={d.startDate ?? ""} onChange={(e) => commit({ startDate: e.target.value || undefined })} /></label>
+          <label className={row}><span className="text-muted">Expected finish</span><input type="date" className="input !py-1.5" value={d.scheduledDate ?? ""} onChange={(e) => commit({ scheduledDate: e.target.value || undefined })} /></label>
+          {d.scheduleAuto && d.soldDate && d.status === "sold" && (
+            <p className="-mt-1 pl-[122px] text-[12px] text-faint">Estimated: starts 2 weeks after it sold, about a week to finish. Change either date to set your own.</p>
+          )}
           <label className={row}><span className="text-muted">Completed</span><input type="date" className="input !py-1.5" value={d.completedDate ?? ""} onChange={(e) => commit({ completedDate: e.target.value || undefined })} /></label>
           <label className={row}><span className="text-muted">Cost % (est.)</span><input className="input !py-1.5" min={0} max={100} placeholder={`${settings.costPct}`} {...num("costPct")} /></label>
           <label className={row}><span className="text-muted">Actual cost ($)</span><input className="input !py-1.5" min={0} placeholder="Once reconciled" {...num("actualCost")} /></label>
@@ -363,21 +367,21 @@ export function CommissionTracker({ business, initial, paintscout }: { business:
 
           {adding && (
             <div className="card mb-3 flex flex-wrap items-end gap-3 p-3">
-              <label className="min-w-[180px] flex-1 text-[12px] text-muted">Customer
-                <input autoFocus className="input mt-1" value={form.customer} onChange={(e) => setForm({ ...form, customer: e.target.value })} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="e.g. Johnson exterior" />
+              <label className="flex flex-col gap-1 min-w-[180px] flex-1 text-[12px] text-muted">Customer
+                <input autoFocus className="input" value={form.customer} onChange={(e) => setForm({ ...form, customer: e.target.value })} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="e.g. Johnson exterior" />
               </label>
-              <label className="w-36 text-[12px] text-muted">Price ($)
-                <input className="input mt-1" inputMode="decimal" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="10,000" />
+              <label className="flex flex-col gap-1 w-36 text-[12px] text-muted">Price ($)
+                <input className="input" inputMode="decimal" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="10,000" />
               </label>
-              <label className="w-40 text-[12px] text-muted">Status
-                <select className="input mt-1" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as JobStatus })}>
+              <label className="flex flex-col gap-1 w-40 text-[12px] text-muted">Status
+                <select className="input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as JobStatus })}>
                   <option value="sent">Estimate sent</option>
                   <option value="sold">Sold</option>
                   <option value="completed">Completed</option>
                 </select>
               </label>
-              <label className="w-40 text-[12px] text-muted">Estimate sent
-                <input type="date" className="input mt-1" value={form.sentDate} onChange={(e) => setForm({ ...form, sentDate: e.target.value })} />
+              <label className="flex flex-col gap-1 w-40 text-[12px] text-muted">Estimate sent
+                <input type="date" className="input" value={form.sentDate} onChange={(e) => setForm({ ...form, sentDate: e.target.value })} />
               </label>
               <div className="flex gap-1">
                 <button className="btn btn-ghost" onClick={() => setAdding(false)}>Cancel</button>
