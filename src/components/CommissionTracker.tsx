@@ -164,33 +164,13 @@ function JobEditor({
   );
 }
 
-type Range = "daily" | "weekly" | "monthly";
-const RANGES: { id: Range; label: string }[] = [
-  { id: "daily", label: "30 days" },
-  { id: "weekly", label: "12 weeks" },
-  { id: "monthly", label: "12 months" },
-];
-
-/** Dollars of estimates sent vs dollars sold, per day / week / month, so you can see the swings. */
+/** Dollars of estimates sent vs dollars sold each month for the last 12 months, so you can see the swings. */
 function EstimatesChart({ jobs, today }: { jobs: Job[]; today: string }) {
-  const [range, setRange] = useState<Range>("weekly");
   const points = useMemo<MultiPoint[]>(() => {
     // Buckets: [start, endExclusive, axis label, tooltip label]
     const buckets: [string, string, string, string][] = [];
     const fmt = (iso: string, o: Intl.DateTimeFormatOptions) => new Date(iso + "T00:00").toLocaleDateString(undefined, o);
-    if (range === "daily") {
-      for (let i = 29; i >= 0; i--) {
-        const d = addDays(today, -i);
-        buckets.push([d, addDays(d, 1), fmt(d, { month: "short", day: "numeric" }), fmt(d, { weekday: "short", month: "short", day: "numeric" })]);
-      }
-    } else if (range === "weekly") {
-      const dow = (new Date(today + "T00:00").getDay() + 6) % 7; // weeks start Monday
-      const monday = addDays(today, -dow);
-      for (let i = 11; i >= 0; i--) {
-        const s = addDays(monday, -7 * i);
-        buckets.push([s, addDays(s, 7), fmt(s, { month: "short", day: "numeric" }), `Week of ${fmt(s, { month: "short", day: "numeric" })}`]);
-      }
-    } else {
+    {
       const [y, m] = today.slice(0, 7).split("-").map(Number);
       for (let i = 11; i >= 0; i--) {
         const d = new Date(y, m - 1 - i, 1);
@@ -207,22 +187,16 @@ function EstimatesChart({ jobs, today }: { jobs: Job[]; today: string }) {
       const sum = (l: Job[]) => l.reduce((t, j) => t + j.amount, 0);
       return { label, tip, values: [sum(sent), sum(won)], notes: [`(${sent.length})`, `(${won.length})`] };
     });
-  }, [jobs, today, range]);
+  }, [jobs, today]);
 
   return (
     <section className="flex h-full flex-col p-4">
       <div className="mb-2 flex flex-wrap items-center gap-3">
         <div>
           <h2 className="text-[17px]">Estimates vs sold</h2>
-          <p className="text-[13px] text-muted">Dollars of estimates sent and dollars sold in each period.</p>
+          <p className="text-[13px] text-muted">Dollars of estimates sent and dollars sold each month.</p>
         </div>
-        <div className="ml-auto flex rounded-full border border-line p-0.5 text-[13px]">
-          {RANGES.map((r) => (
-            <button key={r.id} onClick={() => setRange(r.id)} className={`rounded-full px-3 py-1 ${range === r.id ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}>
-              {r.label}
-            </button>
-          ))}
-        </div>
+        <span className="ml-auto text-[12px] text-faint">Last 12 months</span>
       </div>
       <div className="min-h-0 flex-1">
         <MultiLineChart
