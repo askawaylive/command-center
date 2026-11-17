@@ -14,6 +14,7 @@ export const BUSINESS_COLORS = ["#eb6834", "#2a78d6", "#1baf7a", "#eda100", "#e8
 /** Placeholder taglines from the first version, cleared once so only Scott's own text shows. */
 const DEMO_TAGLINES = new Set(["Live Q&A platform", "Show & studio", "Home goods store", "Tanning products"]);
 const CLEANED = "cleanup:demo-taglines-v1";
+const COST35 = "migrate:job-cost-35";
 
 // Every page reads the business list (the sidebar shows it), so keep it in memory.
 // The app runs as a single server, and saveBusinesses refreshes it.
@@ -36,6 +37,13 @@ async function loadBusinesses(): Promise<Business[]> {
     }));
     await setKV(KEY, next);
     await setKV(CLEANED, true);
+    return next;
+  }
+  if (saved && !(await getKV<boolean>(COST35))) {
+    // Scott lowered the default job cost from 40% to 35% of price (2026-11-16).
+    const next = saved.map((b) => (b.commission?.costPct === 40 ? { ...b, commission: { ...b.commission, costPct: 35 } } : b));
+    await setKV(KEY, next);
+    await setKV(COST35, true);
     return next;
   }
   if (saved) return saved;

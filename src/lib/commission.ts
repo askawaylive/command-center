@@ -1,7 +1,7 @@
 /** Paint & Co style commission math. Pure functions, safe on server and client. */
 import type { Business, BusinessType, Job } from "./types";
 
-export const DEFAULT_COMMISSION = { rate: 13, costPct: 40 };
+export const DEFAULT_COMMISSION = { rate: 13, costPct: 35 };
 
 export const BUSINESS_TYPES: { id: BusinessType; label: string; hint: string }[] = [
   { id: "app", label: "Mobile App", hint: "Subscriptions through Stripe: MRR, paying subscribers, revenue per user" },
