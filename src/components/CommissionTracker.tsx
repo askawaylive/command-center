@@ -464,7 +464,7 @@ export function CommissionTracker({
           <Tile
             label="Open estimates"
             value={money(sentOpen.reduce((t, j) => t + j.amount, 0))}
-            sub={`${sentOpen.length} not sold yet · about ${money(sentOpen.reduce((t, j) => t + jobCommission(j, s), 0))} commission if they all close`}
+            sub={`${money(sentOpen.reduce((t, j) => t + jobCommission(j, s), 0))} potential commission`}
           />
     ) },
     { id: "pipeline", bare: true, half: true, smH: 4, at: { x: 8, y: 0, w: 2, h: 3, minW: 2, minH: 2 }, children: (
