@@ -346,6 +346,103 @@ export function CommissionTracker({
     setAdding(false);
   };
 
+  const jobsSection = (
+    <section className="h-full">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        {FILTERS.map((f) => (
+          <button
+            key={f.id}
+            onClick={() => setFilter(f.id)}
+            className={`rounded-full border px-3 py-1 text-[13px] transition-colors ${filter === f.id ? "border-ink bg-ink text-bg" : "border-line text-muted hover:text-ink"}`}
+          >
+            {f.label}
+          </button>
+        ))}
+        <button onClick={() => setAdding(true)} className="btn btn-primary ml-auto">
+          <Icon name="plus" size={14} /> Add estimate
+        </button>
+      </div>
+
+      {adding && (
+        <div className="card mb-3 flex flex-wrap items-end gap-3 p-3">
+          <label className="flex flex-col gap-1 min-w-[180px] flex-1 text-[12px] text-muted">Customer
+            <input autoFocus className="input" value={form.customer} onChange={(e) => setForm({ ...form, customer: e.target.value })} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="e.g. Johnson exterior" />
+          </label>
+          <label className="flex flex-col gap-1 w-36 text-[12px] text-muted">Price ($)
+            <input className="input" inputMode="decimal" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="10,000" />
+          </label>
+          <label className="flex flex-col gap-1 w-40 text-[12px] text-muted">Status
+            <select className="input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as JobStatus })}>
+              <option value="sent">Estimate sent</option>
+              <option value="sold">Sold</option>
+              <option value="completed">Completed</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 w-40 text-[12px] text-muted">Estimate sent
+            <input type="date" className="input" value={form.sentDate} onChange={(e) => setForm({ ...form, sentDate: e.target.value })} />
+          </label>
+          <div className="flex gap-1">
+            <button className="btn btn-ghost" onClick={() => setAdding(false)}>Cancel</button>
+            <button className="btn btn-primary" onClick={add} disabled={!form.customer.trim() || !form.amount}>Add</button>
+          </div>
+        </div>
+      )}
+
+      <div className="overflow-x-auto rounded-xl border border-line">
+        <table className="w-full min-w-[760px] whitespace-nowrap text-[13px]">
+          <thead>
+            <tr className="border-b border-line text-left text-[12px] text-muted">
+              <th className="px-4 py-2.5 font-normal">Customer</th>
+              <th className="px-3 py-2.5 text-right font-normal">Price</th>
+              <th className="px-3 py-2.5 font-normal">Status</th>
+              <th className="px-3 py-2.5 font-normal">Sent</th>
+              <th className="px-3 py-2.5 font-normal">Sold</th>
+              <th className="px-3 py-2.5 font-normal">Finished</th>
+              <th className="px-3 py-2.5 text-right font-normal">Commission</th>
+              <th className="px-4 py-2.5 font-normal">Paid</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visible.length === 0 && (
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-faint">{jobs.length ? "No jobs here." : "No jobs yet. Add your first estimate above."}</td></tr>
+            )}
+            {visible.map((j) => {
+              const pay = j.status === "completed" && j.completedDate ? nextMonth(monthOf(j.completedDate)!) : j.status === "sold" && j.scheduledDate ? nextMonth(monthOf(j.scheduledDate)!) : null;
+              const dead = j.status === "lost" || j.status === "cancelled";
+              return (
+                <tr key={j.id} onClick={() => setSelectedId(j.id)} className={`cursor-pointer border-b border-line last:border-0 hover:bg-sidebar/60 ${selectedId === j.id ? "bg-accent-soft/50" : ""} ${dead ? "text-faint" : ""}`}>
+                  <td className="px-4 py-2.5">
+                    <div className="font-medium">{j.customer}</div>
+                    {j.quoteNumber && <div className="text-[11px] text-faint">#{j.quoteNumber}</div>}
+                  </td>
+                  <td className="px-3 py-2.5 text-right tabular-nums">{money(j.amount)}</td>
+                  <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+                    <select
+                      value={j.status}
+                      onChange={(e) => patch(j.id, statusPatch(j, e.target.value as JobStatus, today))}
+                      className={`cursor-pointer rounded-full border-0 py-0.5 pl-2 pr-1 text-[12px] outline-none ${STATUS[j.status].cls}`}
+                      aria-label="Status"
+                    >
+                      {(Object.keys(STATUS) as JobStatus[]).map((st) => <option key={st} value={st}>{STATUS[st].label}</option>)}
+                    </select>
+                  </td>
+                  <td className="px-3 py-2.5 text-muted">{shortDate(j.sentDate)}</td>
+                  <td className="px-3 py-2.5 text-muted">{shortDate(j.soldDate)}</td>
+                  <td className="px-3 py-2.5 text-muted">{j.completedDate ? shortDate(j.completedDate) : j.scheduledDate ? <span className="text-faint">~{shortDate(j.scheduledDate)}</span> : ""}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums">{dead ? "–" : money(jobCommission(j, s), true)}</td>
+                  <td className="px-4 py-2.5 text-muted">{pay ? `${j.status === "sold" ? "~" : ""}Early ${monthLabel(pay, { month: "short" })}` : j.status === "sold" ? "When done" : ""}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-2 text-[12px] text-faint">
+        Estimates use {s.rate}% of gross profit with job costs at {s.costPct}% of price until you enter the actual cost. Change the defaults under Manage businesses.
+      </p>
+    </section>
+  );
+
   const widgets: Widget[] = [
     { id: "payday", bare: true, half: true, smH: 4, at: { x: 0, y: 0, w: 3, h: 3, minW: 2, minH: 2 }, children: (
           <Tile
@@ -423,6 +520,7 @@ export function CommissionTracker({
             </div>
           </section>
     ) },
+    { id: "jobs", title: "Jobs", fit: true, at: { x: 0, y: 18, w: 12, h: 16, minW: 4, minH: 4 }, smH: 16, children: jobsSection },
   ];
 
   const grid = view === "analytics" ? <WidgetGrid widgets={widgets} prefKey={`layout:biz:${business.id}`} saved={savedLayout} /> : null;
@@ -430,103 +528,8 @@ export function CommissionTracker({
   return (
     <div className="flex">
       <div className={`min-w-0 flex-1 space-y-6 transition-[padding] ${selected ? "lg:pr-[372px]" : ""}`}>
-        {grid}
         <PaintScoutBar status={ps} syncing={syncing} onSync={sync} />
-        <section>
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <h2 className="mr-2 text-[20px]">Jobs</h2>
-            {FILTERS.map((f) => (
-              <button
-                key={f.id}
-                onClick={() => setFilter(f.id)}
-                className={`rounded-full border px-3 py-1 text-[13px] transition-colors ${filter === f.id ? "border-ink bg-ink text-bg" : "border-line text-muted hover:text-ink"}`}
-              >
-                {f.label}
-              </button>
-            ))}
-            <button onClick={() => setAdding(true)} className="btn btn-primary ml-auto">
-              <Icon name="plus" size={14} /> Add estimate
-            </button>
-          </div>
-
-          {adding && (
-            <div className="card mb-3 flex flex-wrap items-end gap-3 p-3">
-              <label className="flex flex-col gap-1 min-w-[180px] flex-1 text-[12px] text-muted">Customer
-                <input autoFocus className="input" value={form.customer} onChange={(e) => setForm({ ...form, customer: e.target.value })} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="e.g. Johnson exterior" />
-              </label>
-              <label className="flex flex-col gap-1 w-36 text-[12px] text-muted">Price ($)
-                <input className="input" inputMode="decimal" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="10,000" />
-              </label>
-              <label className="flex flex-col gap-1 w-40 text-[12px] text-muted">Status
-                <select className="input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as JobStatus })}>
-                  <option value="sent">Estimate sent</option>
-                  <option value="sold">Sold</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </label>
-              <label className="flex flex-col gap-1 w-40 text-[12px] text-muted">Estimate sent
-                <input type="date" className="input" value={form.sentDate} onChange={(e) => setForm({ ...form, sentDate: e.target.value })} />
-              </label>
-              <div className="flex gap-1">
-                <button className="btn btn-ghost" onClick={() => setAdding(false)}>Cancel</button>
-                <button className="btn btn-primary" onClick={add} disabled={!form.customer.trim() || !form.amount}>Add</button>
-              </div>
-            </div>
-          )}
-
-          <div className="card overflow-x-auto">
-            <table className="w-full min-w-[760px] whitespace-nowrap text-[13px]">
-              <thead>
-                <tr className="border-b border-line text-left text-[12px] text-muted">
-                  <th className="px-4 py-2.5 font-normal">Customer</th>
-                  <th className="px-3 py-2.5 text-right font-normal">Price</th>
-                  <th className="px-3 py-2.5 font-normal">Status</th>
-                  <th className="px-3 py-2.5 font-normal">Sent</th>
-                  <th className="px-3 py-2.5 font-normal">Sold</th>
-                  <th className="px-3 py-2.5 font-normal">Finished</th>
-                  <th className="px-3 py-2.5 text-right font-normal">Commission</th>
-                  <th className="px-4 py-2.5 font-normal">Paid</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visible.length === 0 && (
-                  <tr><td colSpan={8} className="px-4 py-8 text-center text-faint">{jobs.length ? "No jobs here." : "No jobs yet. Add your first estimate above."}</td></tr>
-                )}
-                {visible.map((j) => {
-                  const pay = j.status === "completed" && j.completedDate ? nextMonth(monthOf(j.completedDate)!) : j.status === "sold" && j.scheduledDate ? nextMonth(monthOf(j.scheduledDate)!) : null;
-                  const dead = j.status === "lost" || j.status === "cancelled";
-                  return (
-                    <tr key={j.id} onClick={() => setSelectedId(j.id)} className={`cursor-pointer border-b border-line last:border-0 hover:bg-sidebar/60 ${selectedId === j.id ? "bg-accent-soft/50" : ""} ${dead ? "text-faint" : ""}`}>
-                      <td className="px-4 py-2.5">
-                        <div className="font-medium">{j.customer}</div>
-                        {j.quoteNumber && <div className="text-[11px] text-faint">#{j.quoteNumber}</div>}
-                      </td>
-                      <td className="px-3 py-2.5 text-right tabular-nums">{money(j.amount)}</td>
-                      <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
-                        <select
-                          value={j.status}
-                          onChange={(e) => patch(j.id, statusPatch(j, e.target.value as JobStatus, today))}
-                          className={`cursor-pointer rounded-full border-0 py-0.5 pl-2 pr-1 text-[12px] outline-none ${STATUS[j.status].cls}`}
-                          aria-label="Status"
-                        >
-                          {(Object.keys(STATUS) as JobStatus[]).map((st) => <option key={st} value={st}>{STATUS[st].label}</option>)}
-                        </select>
-                      </td>
-                      <td className="px-3 py-2.5 text-muted">{shortDate(j.sentDate)}</td>
-                      <td className="px-3 py-2.5 text-muted">{shortDate(j.soldDate)}</td>
-                      <td className="px-3 py-2.5 text-muted">{j.completedDate ? shortDate(j.completedDate) : j.scheduledDate ? <span className="text-faint">~{shortDate(j.scheduledDate)}</span> : ""}</td>
-                      <td className="px-3 py-2.5 text-right tabular-nums">{dead ? "–" : money(jobCommission(j, s), true)}</td>
-                      <td className="px-4 py-2.5 text-muted">{pay ? `${j.status === "sold" ? "~" : ""}Early ${monthLabel(pay, { month: "short" })}` : j.status === "sold" ? "When done" : ""}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-2 text-[12px] text-faint">
-            Estimates use {s.rate}% of gross profit with job costs at {s.costPct}% of price until you enter the actual cost. Change the defaults under Manage businesses.
-          </p>
-        </section>
+        {grid ?? jobsSection}
       </div>
 
       {selected && (
