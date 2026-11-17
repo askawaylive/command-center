@@ -94,3 +94,74 @@ export function Sparkline({ values, color = "var(--accent)" }: { values: number[
     </svg>
   );
 }
+
+export type Series = { name: string; color: string; dashed?: boolean };
+export type MultiPoint = { label: string; tip: string; values: number[]; notes?: string[] };
+
+/** Several lines over the same periods (e.g. estimates sent vs sold), with a legend and a hover readout. */
+export function MultiLineChart({ series, points, format = fullMoney }: { series: Series[]; points: MultiPoint[]; format?: (v: number) => string }) {
+  const [ref, { w, h }] = useSize<HTMLDivElement>();
+  const [hover, setHover] = useState<number | null>(null);
+  const top = niceTop(Math.max(0, ...points.flatMap((p) => p.values)));
+  const padL = 48, padR = 12, padT = 10, padB = 24;
+  const pw = Math.max(1, w - padL - padR);
+  const ph = Math.max(1, h - padT - padB);
+  const x = (i: number) => padL + (points.length > 1 ? (i / (points.length - 1)) * pw : pw / 2);
+  const y = (v: number) => padT + ph - (v / top) * ph;
+  const ticks = [0, top / 4, top / 2, (3 * top) / 4, top];
+  const every = Math.max(1, Math.ceil(points.length / Math.max(2, Math.floor(pw / 64))));
+  const path = (k: number) => points.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.values[k]).toFixed(1)}`).join("");
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="mb-2 flex flex-wrap gap-4 text-[12px] text-muted">
+        {series.map((s, k) => (
+          <span key={s.name} className="inline-flex items-center gap-1.5">
+            <span className="h-0.5 w-4 rounded" style={{ background: s.color }} />
+            {s.name}
+            <span className="tabular-nums text-ink">{format(points.reduce((t, p) => t + p.values[k], 0))}</span>
+          </span>
+        ))}
+      </div>
+      <div ref={ref} className="relative min-h-[160px] flex-1">
+        {w > 0 && h > 0 && (
+          <svg width={w} height={h} className="block" onMouseLeave={() => setHover(null)}
+            onMouseMove={(e) => {
+              const r = (e.currentTarget as SVGElement).getBoundingClientRect();
+              const i = Math.round(((e.clientX - r.left - padL) / pw) * (points.length - 1));
+              setHover(i >= 0 && i < points.length ? i : null);
+            }}>
+            {ticks.map((t) => (
+              <g key={t}>
+                <line x1={padL} x2={w - padR} y1={y(t)} y2={y(t)} stroke="var(--border)" strokeDasharray={t ? "2 3" : undefined} />
+                <text x={padL - 6} y={y(t) + 3.5} textAnchor="end" fontSize={11} fill="var(--faint)">{shortMoney(t)}</text>
+              </g>
+            ))}
+            {points.map((p, i) => (i % every === 0 && points.length - 1 - i >= every) || i === points.length - 1 ? (
+              <text key={i} x={x(i)} y={h - 6} textAnchor={i === 0 ? "start" : i === points.length - 1 ? "end" : "middle"} fontSize={11} fill="var(--faint)">{p.label}</text>
+            ) : null)}
+            {series.map((s, k) => (
+              <g key={s.name}>
+                <path d={path(k)} fill="none" stroke={s.color} strokeWidth={2.25} strokeLinejoin="round" strokeLinecap="round" strokeDasharray={s.dashed ? "5 4" : undefined} />
+                {points.map((p, i) => <circle key={i} cx={x(i)} cy={y(p.values[k])} r={hover === i ? 4.5 : 2.5} fill={s.color} stroke="var(--surface)" strokeWidth={1.5} />)}
+              </g>
+            ))}
+            {hover !== null && <line x1={x(hover)} x2={x(hover)} y1={padT} y2={padT + ph} stroke="var(--faint)" strokeDasharray="2 3" />}
+          </svg>
+        )}
+        {hover !== null && points[hover] && (
+          <div className="pointer-events-none absolute top-0 z-10 min-w-[200px] whitespace-nowrap rounded-lg border border-line bg-surface px-3 py-2 text-[12px] shadow-md"
+            style={{ left: Math.min(Math.max(0, x(hover) + 10), Math.max(0, w - 220)) }}>
+            <div className="mb-1 text-muted">{points[hover].tip}</div>
+            {series.map((s, k) => (
+              <div key={s.name} className="flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ background: s.color }} />{s.name}</span>
+                <span className="font-medium tabular-nums">{format(points[hover].values[k])}{points[hover].notes?.[k] ? <span className="ml-1 font-normal text-faint">{points[hover].notes![k]}</span> : null}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

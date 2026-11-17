@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import type { Business, Job, JobStatus } from "@/lib/types";
-import { isoDay } from "@/lib/dates";
+import { addDays, isoDay } from "@/lib/dates";
+import { MultiLineChart, type MultiPoint } from "./charts";
 import {
   annualBonus,
   commissionSettings,
@@ -161,6 +162,80 @@ function JobEditor({
   );
 }
 
+type Range = "daily" | "weekly" | "monthly";
+const RANGES: { id: Range; label: string }[] = [
+  { id: "daily", label: "30 days" },
+  { id: "weekly", label: "12 weeks" },
+  { id: "monthly", label: "12 months" },
+];
+
+/** Dollars of estimates sent vs dollars sold, per day / week / month, so you can see the swings. */
+function EstimatesChart({ jobs, today }: { jobs: Job[]; today: string }) {
+  const [range, setRange] = useState<Range>("weekly");
+  const points = useMemo<MultiPoint[]>(() => {
+    // Buckets: [start, endExclusive, axis label, tooltip label]
+    const buckets: [string, string, string, string][] = [];
+    const fmt = (iso: string, o: Intl.DateTimeFormatOptions) => new Date(iso + "T00:00").toLocaleDateString(undefined, o);
+    if (range === "daily") {
+      for (let i = 29; i >= 0; i--) {
+        const d = addDays(today, -i);
+        buckets.push([d, addDays(d, 1), fmt(d, { month: "short", day: "numeric" }), fmt(d, { weekday: "short", month: "short", day: "numeric" })]);
+      }
+    } else if (range === "weekly") {
+      const dow = (new Date(today + "T00:00").getDay() + 6) % 7; // weeks start Monday
+      const monday = addDays(today, -dow);
+      for (let i = 11; i >= 0; i--) {
+        const s = addDays(monday, -7 * i);
+        buckets.push([s, addDays(s, 7), fmt(s, { month: "short", day: "numeric" }), `Week of ${fmt(s, { month: "short", day: "numeric" })}`]);
+      }
+    } else {
+      const [y, m] = today.slice(0, 7).split("-").map(Number);
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(y, m - 1 - i, 1);
+        const s = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+        const n = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+        const e = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-01`;
+        buckets.push([s, e, fmt(s, { month: "short" }), fmt(s, { month: "long", year: "numeric" })]);
+      }
+    }
+    const sold = jobs.filter((j) => (j.status === "sold" || j.status === "completed") && j.soldDate);
+    return buckets.map(([s, e, label, tip]) => {
+      const sent = jobs.filter((j) => j.sentDate >= s && j.sentDate < e);
+      const won = sold.filter((j) => j.soldDate! >= s && j.soldDate! < e);
+      const sum = (l: Job[]) => l.reduce((t, j) => t + j.amount, 0);
+      return { label, tip, values: [sum(sent), sum(won)], notes: [`(${sent.length})`, `(${won.length})`] };
+    });
+  }, [jobs, today, range]);
+
+  return (
+    <section className="card flex h-[360px] flex-col p-5">
+      <div className="mb-2 flex flex-wrap items-center gap-3">
+        <div>
+          <h2 className="text-[17px]">Estimates vs sold</h2>
+          <p className="text-[13px] text-muted">Dollars of estimates sent and dollars sold in each period.</p>
+        </div>
+        <div className="ml-auto flex rounded-full border border-line p-0.5 text-[13px]">
+          {RANGES.map((r) => (
+            <button key={r.id} onClick={() => setRange(r.id)} className={`rounded-full px-3 py-1 ${range === r.id ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}>
+              {r.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="min-h-0 flex-1">
+        <MultiLineChart
+          series={[
+            { name: "Estimates sent", color: "#5b84b1" },
+            { name: "Sold", color: "var(--accent)" },
+          ]}
+          points={points}
+          format={(v) => money(v)}
+        />
+      </div>
+    </section>
+  );
+}
+
 type PSStatus = { connected: boolean; lastSync?: string; error?: string; owners: { id: string; name: string; email?: string; quotes: number }[]; ownerId?: string; imported?: number };
 
 function ago(iso?: string) {
@@ -286,7 +361,7 @@ export function CommissionTracker({ business, initial, paintscout }: { business:
     <div className="flex">
       <div className={`min-w-0 flex-1 space-y-6 transition-[padding] ${selected ? "lg:pr-[372px]" : ""}`}>
         <PaintScoutBar status={ps} syncing={syncing} onSync={sync} />
-        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
           <Tile
             label={`Payday · early ${monthLabel(nextMonth(thisMonth), { month: "long" })}`}
             value={money((nextPay?.commission ?? 0) + (nextPay?.bonus ?? 0))}
@@ -299,11 +374,18 @@ export function CommissionTracker({ business, initial, paintscout }: { business:
           <Tile label={`Sold in ${monthLabel(thisMonth, { month: "long" })}`} value={money(month.volume)} sub={bonus ? `${money(bonus)} bonus earned · ${money(nextTier - month.volume)} to the next $500` : month.volume && month.margin < 0.45 && month.volume >= 100_000 ? `Margin ${pct(month.margin)}: needs 45% for the bonus` : `${money(nextTier - month.volume)} more for a ${money(monthlyBonus(nextTier, 1))} bonus`}>
             <Bar value={month.volume} max={nextTier} ok={!month.volume || month.margin >= 0.45} />
           </Tile>
+          <Tile
+            label="Open estimates"
+            value={money(sentOpen.reduce((t, j) => t + j.amount, 0))}
+            sub={`${sentOpen.length} not sold yet · about ${money(sentOpen.reduce((t, j) => t + jobCommission(j, s), 0))} commission if they all close`}
+          />
           <Tile label="Sold, not finished" value={money(pipelineComm)} sub={`Commission waiting on ${pipeline.length} job${pipeline.length === 1 ? "" : "s"} (${money(pipeline.reduce((t, j) => t + j.amount, 0))})`} />
           <Tile label="Win rate · 90 days" value={wr.rate === null ? "–" : pct(wr.rate)} sub={wr.rate === null ? "No estimates in the last 90 days" : `${wr.won} of ${wr.issued} estimates accepted · minimum 40%`}>
             {wr.rate !== null && <Bar value={wr.rate} max={1} ok={wr.rate >= 0.4} />}
           </Tile>
         </div>
+
+        <EstimatesChart jobs={jobs} today={today} />
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,340px)]">
           <section className="card p-5">
