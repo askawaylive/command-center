@@ -36,6 +36,11 @@ export function nextMonth(ym: string) {
 export const monthLabel = (ym: string, opts: Intl.DateTimeFormatOptions = { month: "long", year: "numeric" }) =>
   new Date(ym + "-01T00:00").toLocaleDateString(undefined, opts);
 
+/** Chance an open estimate closes, 0-1. Unset counts as a coin flip. */
+export const DEFAULT_LIKELIHOOD = 50;
+export const CHANCES = [10, 25, 50, 75, 90] as const;
+export const chanceOf = (j: Job) => (j.likelihood ?? DEFAULT_LIKELIHOOD) / 100;
+
 export function jobCost(j: Job, costPct: number) {
   return j.actualCost ?? (j.amount * (j.costPct ?? costPct)) / 100;
 }

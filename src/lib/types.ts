@@ -128,6 +128,8 @@ export interface Job {
   /** Direct costs as % of price, until the real cost is known. Falls back to the business default. */
   costPct?: number;
   actualCost?: number; // reconciled direct cost, once known
+  /** Chance (0-100) an open estimate closes, set by Scott. Unset = 50. */
+  likelihood?: number;
   status: JobStatus;
   sentDate: string; // YYYY-MM-DD proposal issued
   soldDate?: string; // accepted + deposit

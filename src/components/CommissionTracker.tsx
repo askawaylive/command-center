@@ -10,6 +10,9 @@ import {
   commissionSettings,
   jobCommission,
   jobCost,
+  chanceOf,
+  CHANCES,
+  DEFAULT_LIKELIHOOD,
   jobProfit,
   monthLabel,
   monthOf,
@@ -263,6 +266,11 @@ function PaintScoutBar({ status, syncing, onSync }: { status: PSStatus | null; s
   );
 }
 
+/** Pill colour for a chance-to-close: green when likely, amber in the middle, grey when unlikely. */
+function chanceCls(c: number) {
+  return c >= 75 ? "bg-good/15 text-good" : c >= 50 ? "bg-sidebar text-ink" : "bg-sidebar text-faint";
+}
+
 export function CommissionTracker({
   business,
   initial,
@@ -318,8 +326,6 @@ export function CommissionTracker({
   const sched = useMemo(() => payouts(jobs, s), [jobs, s]);
   const nextPay = sched.list.find((p) => p.month === nextMonth(thisMonth));
   const paidSoon = sched.list.find((p) => p.month === thisMonth);
-  const pipeline = jobs.filter((j) => j.status === "sold");
-  const pipelineComm = pipeline.reduce((t, j) => t + jobCommission(j, s), 0);
   const sentOpen = jobs.filter((j) => j.status === "sent");
 
   const visible = jobs.filter((j) => (filter === "all" ? true : filter === "open" ? j.status === "sent" || j.status === "sold" : j.status === filter));
@@ -395,6 +401,7 @@ export function CommissionTracker({
               <th className="px-4 py-2.5 font-normal">Customer</th>
               <th className="px-3 py-2.5 text-right font-normal">Price</th>
               <th className="px-3 py-2.5 font-normal">Status</th>
+              <th className="px-3 py-2.5 font-normal" title="How likely an open estimate is to sell. Click to change.">Chance</th>
               <th className="px-3 py-2.5 font-normal">Sent</th>
               <th className="px-3 py-2.5 font-normal">Sold</th>
               <th className="px-3 py-2.5 font-normal">Finished</th>
@@ -404,7 +411,7 @@ export function CommissionTracker({
           </thead>
           <tbody>
             {visible.length === 0 && (
-              <tr><td colSpan={8} className="px-4 py-8 text-center text-faint">{jobs.length ? "No jobs here." : "No jobs yet. Add your first estimate above."}</td></tr>
+              <tr><td colSpan={9} className="px-4 py-8 text-center text-faint">{jobs.length ? "No jobs here." : "No jobs yet. Add your first estimate above."}</td></tr>
             )}
             {visible.map((j) => {
               const pay = j.status === "completed" && j.completedDate ? nextMonth(monthOf(j.completedDate)!) : j.status === "sold" && j.scheduledDate ? nextMonth(monthOf(j.scheduledDate)!) : null;
@@ -425,6 +432,19 @@ export function CommissionTracker({
                     >
                       {(Object.keys(STATUS) as JobStatus[]).map((st) => <option key={st} value={st}>{STATUS[st].label}</option>)}
                     </select>
+                  </td>
+                  <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+                    {j.status === "sent" ? (
+                      <select
+                        value={j.likelihood ?? DEFAULT_LIKELIHOOD}
+                        onChange={(e) => patch(j.id, { likelihood: Number(e.target.value) })}
+                        className={`cursor-pointer rounded-full border-0 py-0.5 pl-2 pr-1 text-[12px] tabular-nums outline-none ${chanceCls(j.likelihood ?? DEFAULT_LIKELIHOOD)}`}
+                        aria-label="Chance it closes"
+                      >
+                        {CHANCES.map((c) => <option key={c} value={c}>{c}%</option>)}
+                        {!(CHANCES as readonly number[]).includes(j.likelihood ?? DEFAULT_LIKELIHOOD) && <option value={j.likelihood}>{j.likelihood}%</option>}
+                      </select>
+                    ) : null}
                   </td>
                   <td className="px-3 py-2.5 text-muted">{shortDate(j.sentDate)}</td>
                   <td className="px-3 py-2.5 text-muted">{shortDate(j.soldDate)}</td>
@@ -468,7 +488,11 @@ export function CommissionTracker({
           />
     ) },
     { id: "pipeline", bare: true, half: true, smH: 4, at: { x: 8, y: 0, w: 2, h: 3, minW: 2, minH: 2 }, children: (
-          <Tile label="Sold, not finished" value={money(pipelineComm)} sub={`Commission waiting on ${pipeline.length} job${pipeline.length === 1 ? "" : "s"} (${money(pipeline.reduce((t, j) => t + j.amount, 0))})`} />
+          <Tile
+            label="Likely to close"
+            value={money(sentOpen.reduce((t, j) => t + j.amount * chanceOf(j), 0))}
+            sub={`${money(sentOpen.reduce((t, j) => t + jobCommission(j, s) * chanceOf(j), 0))} likely commission`}
+          />
     ) },
     { id: "winrate", bare: true, half: true, smH: 4, at: { x: 10, y: 0, w: 2, h: 3, minW: 2, minH: 2 }, children: (
           <Tile label="Win rate · 90 days" value={wr.rate === null ? "–" : pct(wr.rate)} sub={wr.rate === null ? "No estimates in the last 90 days" : `${wr.won} of ${wr.issued} estimates accepted · minimum 40%`}>
@@ -516,7 +540,7 @@ export function CommissionTracker({
               </>
             )}
             <div className="mt-4 border-t border-line pt-3 text-[12px] text-muted">
-              {sentOpen.length} estimate{sentOpen.length === 1 ? "" : "s"} out worth {money(sentOpen.reduce((t, j) => t + j.amount, 0))}. If they all close: about {money(sentOpen.reduce((t, j) => t + jobCommission(j, s), 0))} commission.
+              {sentOpen.length} estimate{sentOpen.length === 1 ? "" : "s"} out worth {money(sentOpen.reduce((t, j) => t + j.amount, 0))}. Likely to close: {money(sentOpen.reduce((t, j) => t + j.amount * chanceOf(j), 0))}, about {money(sentOpen.reduce((t, j) => t + jobCommission(j, s) * chanceOf(j), 0))} commission.
             </div>
           </section>
     ) },

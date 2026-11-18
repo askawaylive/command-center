@@ -26,6 +26,10 @@ function clean(input: Partial<Job>): Partial<Job> {
     out.costPct = c !== undefined && c <= 100 ? c : undefined;
   }
   if ("actualCost" in input) out.actualCost = money(input.actualCost);
+  if ("likelihood" in input) {
+    const l = Number(input.likelihood);
+    out.likelihood = input.likelihood != null && Number.isFinite(l) ? Math.min(100, Math.max(0, Math.round(l))) : undefined;
+  }
   if ("status" in input) out.status = STATUSES.includes(input.status as JobStatus) ? input.status : "sent";
   if ("sentDate" in input) out.sentDate = date(input.sentDate) ?? new Date().toISOString().slice(0, 10);
   for (const k of ["soldDate", "startDate", "scheduledDate", "completedDate"] as const) if (k in input) out[k] = date(input[k]);
