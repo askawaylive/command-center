@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Business, Job, JobStatus } from "@/lib/types";
 import { isoDay } from "@/lib/dates";
 import { MultiLineChart, type MultiPoint } from "./charts";
+import { ColumnGrip, useColumnWidths } from "./useColumnWidths";
 import { WidgetGrid, type Widget } from "./WidgetGrid";
 import type { Layouts } from "react-grid-layout";
 import {
@@ -266,6 +267,20 @@ function PaintScoutBar({ status, syncing, onSync }: { status: PSStatus | null; s
   );
 }
 
+/** Jobs table columns; widths are px and can be dragged. */
+const COLS: { key: string; label: string; w: number; right?: boolean; title?: string }[] = [
+  { key: "customer", label: "Customer", w: 220 },
+  { key: "price", label: "Price", w: 100, right: true },
+  { key: "status", label: "Status", w: 150 },
+  { key: "chance", label: "Chance", w: 90, title: "How likely an open estimate is to sell. Click to change." },
+  { key: "sent", label: "Sent", w: 80 },
+  { key: "sold", label: "Sold", w: 80 },
+  { key: "finished", label: "Finished", w: 90 },
+  { key: "commission", label: "Commission", w: 110, right: true },
+  { key: "paid", label: "Paid", w: 110 },
+];
+const COL_DEFAULTS: Record<string, number> = Object.fromEntries(COLS.map((c) => [c.key, c.w]));
+
 /** Pill colour for a chance-to-close: green when likely, amber in the middle, grey when unlikely. */
 function chanceCls(c: number) {
   return c >= 75 ? "bg-good/15 text-good" : c >= 50 ? "bg-sidebar text-ink" : "bg-sidebar text-faint";
@@ -327,6 +342,7 @@ export function CommissionTracker({
   const nextPay = sched.list.find((p) => p.month === nextMonth(thisMonth));
   const paidSoon = sched.list.find((p) => p.month === thisMonth);
   const sentOpen = jobs.filter((j) => j.status === "sent");
+  const cols = useColumnWidths(`cols:jobs-${business.id}`, COL_DEFAULTS);
 
   const visible = jobs.filter((j) => (filter === "all" ? true : filter === "open" ? j.status === "sent" || j.status === "sold" : j.status === filter));
   const selected = jobs.find((j) => j.id === selectedId);
@@ -395,23 +411,23 @@ export function CommissionTracker({
       )}
 
       <div className="overflow-x-auto rounded-xl border border-line">
-        <table className="w-full min-w-[760px] whitespace-nowrap text-[13px]">
+        <table className="w-full table-fixed whitespace-nowrap text-[13px] [&_td]:overflow-hidden [&_td]:text-ellipsis" style={{ minWidth: COLS.reduce((t, c) => t + cols.widths[c.key], 0) }}>
+          <colgroup>
+            {COLS.map((c) => <col key={c.key} style={{ width: cols.widths[c.key] }} />)}
+          </colgroup>
           <thead>
             <tr className="border-b border-line text-left text-[12px] text-muted">
-              <th className="px-4 py-2.5 font-normal">Customer</th>
-              <th className="px-3 py-2.5 text-right font-normal">Price</th>
-              <th className="px-3 py-2.5 font-normal">Status</th>
-              <th className="px-3 py-2.5 font-normal" title="How likely an open estimate is to sell. Click to change.">Chance</th>
-              <th className="px-3 py-2.5 font-normal">Sent</th>
-              <th className="px-3 py-2.5 font-normal">Sold</th>
-              <th className="px-3 py-2.5 font-normal">Finished</th>
-              <th className="px-3 py-2.5 text-right font-normal">Commission</th>
-              <th className="px-4 py-2.5 font-normal">Paid</th>
+              {COLS.map((c, i) => (
+                <th key={c.key} title={c.title} className={`relative select-none py-2.5 font-normal ${i === 0 ? "px-4" : i === COLS.length - 1 ? "px-4" : "px-3"} ${c.right ? "text-right" : ""}`}>
+                  {c.label}
+                  {i < COLS.length - 1 && <ColumnGrip onPointerDown={cols.startResize(c.key)} onReset={() => cols.reset(c.key)} />}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {visible.length === 0 && (
-              <tr><td colSpan={9} className="px-4 py-8 text-center text-faint">{jobs.length ? "No jobs here." : "No jobs yet. Add your first estimate above."}</td></tr>
+              <tr><td colSpan={COLS.length} className="px-4 py-8 text-center text-faint">{jobs.length ? "No jobs here." : "No jobs yet. Add your first estimate above."}</td></tr>
             )}
             {visible.map((j) => {
               const pay = j.status === "completed" && j.completedDate ? nextMonth(monthOf(j.completedDate)!) : j.status === "sold" && j.scheduledDate ? nextMonth(monthOf(j.scheduledDate)!) : null;

@@ -3,7 +3,7 @@ import { getKV, setKV } from "@/lib/store";
 
 /** Small UI preferences that should follow Scott across devices. Only these keys are accepted. */
 const ALLOWED = new Set(["layout:today", "photos:interval"]);
-const allowed = (key: string) => ALLOWED.has(key) || /^layout:biz:[a-z0-9-]{1,40}$/.test(key);
+const allowed = (key: string) => ALLOWED.has(key) || /^layout:biz:[a-z0-9-]{1,40}$/.test(key) || /^cols:[a-z0-9-]{1,60}$/.test(key);
 
 export async function GET(_req: Request, { params }: { params: Promise<{ key: string }> }) {
   const { key } = await params;
